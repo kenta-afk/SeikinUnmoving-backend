@@ -1,0 +1,1 @@
+If you clone this repository, please command $lefthook install.
