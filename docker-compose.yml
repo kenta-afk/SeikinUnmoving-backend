@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: seikin-postgres
+    environment:
+      POSTGRES_DB: seikin
+      POSTGRES_USER: seikin_user
+      POSTGRES_PASSWORD: seikin_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seikin_user -d seikin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - seikin-network
+
+  migration:
+    image: postgres:18
+    container_name: seikin-migration
+    environment:
+      PGHOST: postgres
+      PGDATABASE: seikin
+      PGUSER: seikin_user
+      PGPASSWORD: seikin_password
+    volumes:
+      - ./db/init:/migrations
+      - ./db/run-migrations.sh:/run-migrations.sh
+    entrypoint: ["/bin/bash", "/run-migrations.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - seikin-network
+
+  valkey:
+    image: valkey/valkey:9.0-alpine
+    container_name: seikin-valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - seikin-network
+
+  apiroute:
+    build:
+      context: .
+      dockerfile: apiroute/dev/Dockerfile
+    container_name: seikin-apiroute
+    ports:
+      - "8080:8080"
+    environment:
+      LOG_LEVEL: DEBUG
+      APIROUTE: 0.0.0.0:8080
+      DATABASE_URL: postgres://seikin_user:seikin_password@postgres:5432/seikin
+      REDIS_URL: redis://valkey:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    networks:
+      - seikin-network
+
+volumes:
+  postgres_data:
+  valkey_data:
+
+networks:
+  seikin-network:
+    driver: bridge

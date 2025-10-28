@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+
+# Target directory
+target/
+**/target/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Development
+*.md
+README.md
+
+# Database
+db/data/
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# Test files
+**/tests/
+
+# Documentation
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Lefthook
+.lefthook.yaml

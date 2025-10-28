@@ -1,1 +1,6 @@
 /target
+
+# Docker
+db/data/
+*.db
+*.sqlite
