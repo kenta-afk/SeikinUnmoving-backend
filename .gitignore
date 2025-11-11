@@ -1,5 +1,15 @@
 /target
 
+# Node.js
+node_modules/
+
+# Cloudflare Workers
+.wrangler/
+
+# Rust build artifacts
+**/target/
+**/build/
+
 # Docker
 db/data/
 *.db

@@ -2,9 +2,21 @@
 .git
 .gitignore
 
-# Target directory
+# Rust build artifacts
 target/
 **/target/
+**/build/
+
+# Node.js
+node_modules/
+**/node_modules/
+package-lock.json
+yarn.lock
+
+# Cloudflare Workers (不要 - apirouteのビルドには使わない)
+api/
+.wrangler/
+**/.wrangler/
 
 # IDE
 .vscode/
@@ -25,6 +37,8 @@ docker-compose.yml
 # Development
 *.md
 README.md
+DEPLOY.md
+GITHUB_ACTIONS_SETUP.md
 
 # Database
 db/data/
@@ -47,3 +61,4 @@ docs/
 
 # Lefthook
 .lefthook.yaml
+.lefthook-local.yaml

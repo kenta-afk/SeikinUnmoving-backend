@@ -1,0 +1,36 @@
+name = "seikin-backend"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-10-28"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+# 環境変数（非機密情報）
+[vars]
+LOG_LEVEL = "INFO"
+
+# 本番環境
+[env.production]
+name = "seikin-backend-production"
+
+[env.production.vars]
+LOG_LEVEL = "INFO"
+
+# ========================================
+# 今後必要に応じて追加:
+# ========================================
+
+# D1データベース（SQLite互換）
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "seikin-db"
+# database_id = "your-database-id"  # wrangler d1 create seikin-db で取得
+
+# KVストア（Redis/Valkey代替）
+# [[kv_namespaces]]
+# binding = "KV"
+# id = "your-kv-id"  # wrangler kv:namespace create "seikin-kv" で取得
+
+# シークレット（機密情報）は以下のコマンドで設定：
+# wrangler secret put API_KEY
+# wrangler secret put JWT_SECRET
