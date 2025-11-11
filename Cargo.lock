@@ -19,11 +19,14 @@ dependencies = [
  "axum",
  "console_error_panic_hook",
  "dotenv",
+ "gameservice",
+ "rankingservice",
  "serde",
  "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "userservice",
  "worker",
 ]
 
@@ -237,6 +240,10 @@ dependencies = [
  "pin-utils",
  "slab",
 ]
+
+[[package]]
+name = "gameservice"
+version = "0.1.0"
 
 [[package]]
 name = "http"
@@ -595,6 +602,10 @@ checksum = "ce25767e7b499d1b604768e7cde645d14cc8584231ea6b295e9c9eb22c02e1d1"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "rankingservice"
+version = "0.1.0"
 
 [[package]]
 name = "regex-automata"
@@ -962,6 +973,10 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "userservice"
+version = "0.1.0"
 
 [[package]]
 name = "utf8_iter"
