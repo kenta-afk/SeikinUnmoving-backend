@@ -1,1 +1,1 @@
-pub mod sample;
+pub mod uuid_service;

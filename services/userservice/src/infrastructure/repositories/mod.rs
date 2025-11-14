@@ -1,2 +1,2 @@
 pub mod dto;
-pub mod sample;
+pub mod user_repository;

@@ -1,5 +1,3 @@
 [workspace]
-members = ["services/authservice", "apiroute"]
+members = ["services/authservice", "services/userservice", "apiroute"]
 resolver = "2"
-
-# api/ は独立したプロジェクトとしてビルド（Cloudflare Workers専用）

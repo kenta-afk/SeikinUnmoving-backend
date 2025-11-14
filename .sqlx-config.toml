@@ -1,0 +1,9 @@
+# SQLx configuration for migration
+# This file is used by sqlx-cli for database migrations
+
+# Database URL for SQLite
+# In development, this points to the local SQLite file
+# In production (Cloudflare D1), migrations will be managed separately
+
+# Migration directory
+migrations_dir = "db/migrations"

@@ -1,13 +1,16 @@
 # Build stage
 FROM rust:1.90-bookworm AS builder
 
-# Install mold linker
+# Install mold linker and build dependencies
 RUN apt-get update && \
     apt-get install -y clang mold && \
     rm -rf /var/lib/apt/lists/*
 
 # Configure cargo to use mold
 ENV RUSTFLAGS="-C link-arg=-fuse-ld=mold"
+
+# Install sqlx-cli for migrations
+RUN cargo install sqlx-cli --no-default-features --features sqlite
 
 WORKDIR /build
 
@@ -32,9 +35,20 @@ WORKDIR /app
 # Copy the binary from builder
 COPY --from=builder /build/target/release/apiroute /app/apiroute
 
+# Copy sqlx-cli for migrations
+COPY --from=builder /usr/local/cargo/bin/sqlx /usr/local/bin/sqlx
+
+# Copy migration files
+COPY db/migrations /app/db/migrations
+COPY .sqlx-config.toml /app/.sqlx-config.toml
+
 # Copy the env file
 COPY apiroute/dev/.env /app/.env
 
+# Copy entrypoint script
+COPY apiroute/dev/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 8080
 
-CMD ["/app/apiroute"]
+ENTRYPOINT ["/app/entrypoint.sh"]
