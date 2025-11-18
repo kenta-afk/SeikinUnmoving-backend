@@ -1,8 +1,8 @@
 use crate::{
     ServiceError,
-    application::command::signup::SignUpCommand,
+    application::{command::signup::SignUpCommand, dto::signup::SignUpDto},
     domain::{
-        models::{id::UserId, user::User},
+        models::user::User,
         services::{secret_service::SecretService, uuid_service::UuidService},
         user_repository::UserRepository,
     },
@@ -37,24 +37,20 @@ where
     IP: UuidService,
     SS: SecretService,
 {
-    async fn signup(&self, command: SignUpCommand) -> Result<(String, String), ServiceError> {
-        let user_id = UserId::new(&self.uuid_service);
-        let hashed_password = self.secret_service.hash_password(&command.password);
-
+    async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError> {
         let user = User::new(
-            user_id,
             command.name,
             command.email,
-            hashed_password,
-            chrono::Utc::now(),
-            chrono::Utc::now(),
+            command.password,
+            &self.uuid_service,
+            &self.secret_service,
         );
+
+        let jwt = self.secret_service.create_jwt(user.id)?;
+        let refresh_token = self.secret_service.create_secret();
 
         self.user_repo.save(user).await?;
 
-        let jwt = self.secret_service.create_jwt(user_id)?;
-        let refresh_token = self.secret_service.create_secret();
-
-        Ok((jwt, refresh_token))
+        Ok(SignUpDto { jwt, refresh_token })
     }
 }

@@ -1,4 +1,7 @@
-use crate::domain::models::id::UserId;
+use crate::domain::{
+    models::id::UserId,
+    services::{secret_service::SecretService, uuid_service::UuidService},
+};
 use chrono::{DateTime, Utc};
 
 pub struct User {
@@ -10,23 +13,24 @@ pub struct User {
     pub updated_at: DateTime<Utc>,
 }
 
-#[allow(dead_code)]
 impl User {
     pub fn new(
-        id: UserId,
         name: String,
         email: String,
         password: String,
-        created_at: DateTime<Utc>,
-        updated_at: DateTime<Utc>,
+        uuid_service: &impl UuidService,
+        secret_service: &impl SecretService,
     ) -> User {
+        let user_id = UserId::new(uuid_service);
+        let hashed_password = secret_service.hash_password(&password);
+
         User {
-            id,
+            id: user_id,
             name,
             email,
-            password,
-            created_at,
-            updated_at,
+            password: hashed_password,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
         }
     }
 }
