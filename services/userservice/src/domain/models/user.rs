@@ -1,7 +1,6 @@
 use crate::domain::models::id::UserId;
 use chrono::{DateTime, Utc};
 
-#[allow(dead_code)]
 pub struct User {
     pub id: UserId,
     pub name: String,
@@ -13,7 +12,7 @@ pub struct User {
 
 #[allow(dead_code)]
 impl User {
-    fn new(
+    pub fn new(
         id: UserId,
         name: String,
         email: String,
