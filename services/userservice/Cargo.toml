@@ -11,6 +11,7 @@ hex = "0.4.3"
 jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
 rand = "0.9.2"
 serde = "1.0.228"
+sha2 = "0.10.9"
 sqlx = { version = "0.8.6", features = ["sqlite", "chrono", "uuid"] }
 thiserror = "2.0.17"
 tokio = "1.48.0"

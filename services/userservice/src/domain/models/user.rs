@@ -4,11 +4,13 @@ use crate::domain::{
 };
 use chrono::{DateTime, Utc};
 
+#[derive(sqlx::Type)]
 pub struct User {
     pub id: UserId,
     pub name: String,
     pub email: String,
     pub password: String,
+    pub seikin_similarity: f64,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -21,14 +23,12 @@ impl User {
         uuid_service: &impl UuidService,
         secret_service: &impl SecretService,
     ) -> User {
-        let user_id = UserId::new(uuid_service);
-        let hashed_password = secret_service.hash_password(&password);
-
         User {
-            id: user_id,
+            id: UserId::new(uuid_service),
             name,
             email,
-            password: hashed_password,
+            password: secret_service.hash_password(&password),
+            seikin_similarity: 0.0,
             created_at: chrono::Utc::now(),
             updated_at: chrono::Utc::now(),
         }

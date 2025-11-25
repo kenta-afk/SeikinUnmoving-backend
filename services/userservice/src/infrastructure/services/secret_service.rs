@@ -6,12 +6,22 @@ use argon2::{
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, encode};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Claims {
+pub struct JwtClaims {
     sub: UserId,
     exp: usize,
     iat: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct RefreshClaims {
+    sub: UserId,
+    exp: usize,
+    iat: usize,
+    jti: Uuid,
 }
 
 #[allow(dead_code)]
@@ -58,7 +68,7 @@ impl SecretService for SecretServiceImpl {
     }
     fn create_jwt(&self, user_id: UserId) -> Result<String, jsonwebtoken::errors::Error> {
         let now = chrono::Utc::now();
-        let claims = Claims {
+        let claims = JwtClaims {
             sub: user_id,
             exp: (now + chrono::Duration::hours(24)).timestamp() as usize,
             iat: now.timestamp() as usize,
@@ -66,8 +76,8 @@ impl SecretService for SecretServiceImpl {
 
         encode(&Header::default(), &claims, &self.encoding_key)
     }
-    fn decode_jwt(&self, token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
-        let token_data = jsonwebtoken::decode::<Claims>(
+    fn decode_jwt(&self, token: &str) -> Result<JwtClaims, jsonwebtoken::errors::Error> {
+        let token_data = jsonwebtoken::decode::<JwtClaims>(
             token,
             &self.decoding_key,
             &jsonwebtoken::Validation::new(Algorithm::HS256),

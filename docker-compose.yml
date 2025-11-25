@@ -21,11 +21,8 @@ services:
     container_name: seikin-apiroute
     ports:
       - "8080:8080"
-    environment:
-      LOG_LEVEL: DEBUG
-      APIROUTE: 0.0.0.0:8080
-      DATABASE_URL: sqlite:///data/seikin.db
-      REDIS_URL: redis://valkey:6379
+    env_file:
+      - apiroute/dev/.env
     volumes:
       - sqlite_data:/data
     depends_on:
