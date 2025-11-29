@@ -3,7 +3,7 @@ use crate::{
     application::{command::signup::SignUpCommand, dto::signup::SignUpDto},
     domain::{
         models::{
-            constant::{JWT_EXPIRATION_SECONDS, REFRESH_EXPIRATION_DAYS},
+            constant::{JWT_EXPIRATION_SECONDS, REFRESH_TOKEN_EXPIRATION_DAYS},
             jwt::JwtClaims,
             refresh_token::RefreshClaims,
             user::User,
@@ -53,7 +53,7 @@ where
 
         let jwt_claims = JwtClaims::new(user.id, JWT_EXPIRATION_SECONDS);
         let refresh_token_claims =
-            RefreshClaims::new(user.id, &self.uuid_service, REFRESH_EXPIRATION_DAYS);
+            RefreshClaims::new(user.id, &self.uuid_service, REFRESH_TOKEN_EXPIRATION_DAYS);
 
         let jwt = self.secret_service.create_jwt(&jwt_claims)?;
         let refresh_token = self
