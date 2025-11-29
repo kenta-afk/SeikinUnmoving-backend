@@ -1,28 +1,13 @@
-use crate::domain::{models::id::UserId, services::secret_service::SecretService};
+use crate::domain::{
+    models::{jwt::JwtClaims, refresh_token::RefreshClaims},
+    services::secret_service::SecretService,
+};
 use argon2::{
     Argon2, PasswordHasher, PasswordVerifier,
     password_hash::{PasswordHash, SaltString},
 };
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, encode};
 use rand::RngCore;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct JwtClaims {
-    sub: UserId,
-    exp: usize,
-    iat: usize,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[allow(dead_code)]
-pub struct RefreshClaims {
-    sub: UserId,
-    exp: usize,
-    iat: usize,
-    jti: Uuid,
-}
 
 #[allow(dead_code)]
 pub struct SecretServiceImpl {
@@ -66,19 +51,29 @@ impl SecretService for SecretServiceImpl {
             None => false,
         }
     }
-    fn create_jwt(&self, user_id: UserId) -> Result<String, jsonwebtoken::errors::Error> {
-        let now = chrono::Utc::now();
-        let claims = JwtClaims {
-            sub: user_id,
-            exp: (now + chrono::Duration::hours(24)).timestamp() as usize,
-            iat: now.timestamp() as usize,
-        };
-
+    fn create_jwt(&self, claims: &JwtClaims) -> Result<String, jsonwebtoken::errors::Error> {
         encode(&Header::default(), &claims, &self.encoding_key)
     }
     fn decode_jwt(&self, token: &str) -> Result<JwtClaims, jsonwebtoken::errors::Error> {
         let token_data = jsonwebtoken::decode::<JwtClaims>(
             token,
+            &self.decoding_key,
+            &jsonwebtoken::Validation::new(Algorithm::HS256),
+        )?;
+        Ok(token_data.claims)
+    }
+    fn create_refresh_token(
+        &self,
+        claims: &RefreshClaims,
+    ) -> Result<String, jsonwebtoken::errors::Error> {
+        encode(&Header::default(), claims, &self.encoding_key)
+    }
+    fn decode_refresh_token(
+        &self,
+        refresh_token: &str,
+    ) -> Result<RefreshClaims, jsonwebtoken::errors::Error> {
+        let token_data = jsonwebtoken::decode::<RefreshClaims>(
+            refresh_token,
             &self.decoding_key,
             &jsonwebtoken::Validation::new(Algorithm::HS256),
         )?;

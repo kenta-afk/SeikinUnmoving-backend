@@ -36,7 +36,6 @@ checksum = "5192cca8006f1fd4f7237516f40fa183bb07f8fbdfedaa0036de5ea9b0b45e78"
 name = "apiroute"
 version = "0.1.0"
 dependencies = [
- "authservice",
  "axum",
  "console_error_panic_hook",
  "dotenv",
@@ -88,10 +87,6 @@ name = "atomic-waker"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
-
-[[package]]
-name = "authservice"
-version = "0.1.0"
 
 [[package]]
 name = "autocfg"

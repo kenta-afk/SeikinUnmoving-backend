@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-authservice = { path = "../services/authservice" }
 userservice = { path = "../services/userservice" }
 gameservice = { path = "../services/gameservice" }
 rankingservice = { path = "../services/rankingservice" }

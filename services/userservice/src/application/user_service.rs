@@ -2,7 +2,12 @@ use crate::{
     ServiceError,
     application::{command::signup::SignUpCommand, dto::signup::SignUpDto},
     domain::{
-        models::user::User,
+        models::{
+            constant::{JWT_EXPIRATION_SECONDS, REFRESH_EXPIRATION_DAYS},
+            jwt::JwtClaims,
+            refresh_token::RefreshClaims,
+            user::User,
+        },
         services::{secret_service::SecretService, uuid_service::UuidService},
         user_repository::UserRepository,
     },
@@ -46,8 +51,14 @@ where
             &self.secret_service,
         );
 
-        let jwt = self.secret_service.create_jwt(user.id)?;
-        let refresh_token = self.secret_service.create_secret();
+        let jwt_claims = JwtClaims::new(user.id, JWT_EXPIRATION_SECONDS);
+        let refresh_token_claims =
+            RefreshClaims::new(user.id, &self.uuid_service, REFRESH_EXPIRATION_DAYS);
+
+        let jwt = self.secret_service.create_jwt(&jwt_claims)?;
+        let refresh_token = self
+            .secret_service
+            .create_refresh_token(&refresh_token_claims)?;
 
         self.user_repo.save(user).await?;
 
