@@ -3,32 +3,41 @@ use crate::{
     application::{command::signup::SignUpCommand, dto::signup::SignUpDto},
     domain::{
         models::{
+            client::Client,
             constant::{JWT_EXPIRATION_SECONDS, REFRESH_TOKEN_EXPIRATION_DAYS},
             jwt::JwtClaims,
             refresh_token::RefreshClaims,
             user::User,
         },
+        repositories::{client_repository::ClientRepository, user_repository::UserRepository},
         services::{secret_service::SecretService, uuid_service::UuidService},
-        user_repository::UserRepository,
     },
 };
 
-pub struct UserServiceImpl<UR: UserRepository, IP: UuidService, SS: SecretService> {
+pub struct UserServiceImpl<
+    UR: UserRepository,
+    CR: ClientRepository,
+    IP: UuidService,
+    SS: SecretService,
+> {
     user_repo: UR,
+    client_repo: CR,
     uuid_service: IP,
     secret_service: SS,
 }
 
 #[allow(dead_code)]
-impl<UR, IP, SS> UserServiceImpl<UR, IP, SS>
+impl<UR, CR, IP, SS> UserServiceImpl<UR, CR, IP, SS>
 where
     UR: UserRepository,
+    CR: ClientRepository,
     IP: UuidService,
     SS: SecretService,
 {
-    pub fn new(user_repo: UR, uuid_service: IP, secret_service: SS) -> Self {
+    pub fn new(user_repo: UR, client_repo: CR, uuid_service: IP, secret_service: SS) -> Self {
         Self {
             user_repo,
+            client_repo,
             uuid_service,
             secret_service,
         }
@@ -36,9 +45,10 @@ where
 }
 
 #[allow(dead_code)]
-impl<UR, IP, SS> UserServiceImpl<UR, IP, SS>
+impl<UR, CR, IP, SS> UserServiceImpl<UR, CR, IP, SS>
 where
     UR: UserRepository,
+    CR: ClientRepository,
     IP: UuidService,
     SS: SecretService,
 {
@@ -60,7 +70,15 @@ where
             .secret_service
             .create_refresh_token(&refresh_token_claims)?;
 
+        let client = Client::new(
+            user.id,
+            refresh_token_claims.jti,
+            refresh_token_claims.exp,
+            &self.uuid_service,
+        );
+
         self.user_repo.save(user).await?;
+        self.client_repo.save(client).await?;
 
         Ok(SignUpDto { jwt, refresh_token })
     }

@@ -5,8 +5,8 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RefreshClaims {
     pub sub: UserId,
-    pub exp: usize,
-    pub iat: usize,
+    pub exp: i64,
+    pub iat: i64,
     pub jti: Uuid,
 }
 
@@ -15,8 +15,8 @@ impl RefreshClaims {
         let now = chrono::Utc::now();
         Self {
             sub: user_id,
-            exp: (now + chrono::Duration::days(expires_in_days)).timestamp() as usize,
-            iat: now.timestamp() as usize,
+            exp: (now + chrono::Duration::days(expires_in_days)).timestamp(),
+            iat: now.timestamp(),
             jti: uuid_service.new_v7(),
         }
     }

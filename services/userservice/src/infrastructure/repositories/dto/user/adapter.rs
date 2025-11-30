@@ -1,4 +1,4 @@
-use crate::{domain::models::user::User, infrastructure::repositories::dto::user::DbUser};
+use crate::{domain::models::user::User, infrastructure::repositories::dto::user::db_user::DbUser};
 
 impl From<DbUser> for User {
     fn from(db_user: DbUser) -> Self {

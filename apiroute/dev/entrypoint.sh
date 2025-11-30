@@ -24,6 +24,6 @@ sqlx migrate run --source /app/db/migrations --database-url "${DATABASE_URL}"
 
 echo "Migration completed successfully!"
 
-# Start the application
-echo "Starting apiroute server..."
-exec /app/apiroute
+# Start the application in debug mode for development
+echo "Starting apiroute server in development mode..."
+exec /app/target/debug/apiroute

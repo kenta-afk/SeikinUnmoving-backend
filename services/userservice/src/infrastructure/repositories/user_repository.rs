@@ -4,12 +4,11 @@ use sqlx::SqlitePool;
 use crate::{
     domain::{
         models::{error::DbError, id::UserId, user::User},
-        user_repository::UserRepository,
+        repositories::user_repository::UserRepository,
     },
-    infrastructure::repositories::dto::user::DbUser,
+    infrastructure::repositories::dto::user::db_user::DbUser,
 };
 
-#[allow(dead_code)]
 pub struct UserRepositoryImpl {
     pub pool: SqlitePool,
 }
