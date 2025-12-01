@@ -22,7 +22,7 @@ impl UserRepositoryImpl {
 
 #[async_trait::async_trait]
 impl UserRepository for UserRepositoryImpl {
-    async fn save(&self, user: User) -> Result<(), DbError> {
+    async fn create(&self, user: User) -> Result<(), DbError> {
         sqlx::query!(
             r#"
             INSERT INTO users (id, name, email, password, seikin_similarity, created_at, updated_at)
@@ -41,7 +41,7 @@ impl UserRepository for UserRepositoryImpl {
 
         Ok(())
     }
-    async fn get_by_id(&self, user_id: UserId) -> Result<Option<User>, DbError> {
+    async fn get_by_email(&self, email: &str) -> Result<Option<User>, DbError> {
         let record = sqlx::query_as!(
             DbUser,
             r#"
@@ -54,9 +54,9 @@ impl UserRepository for UserRepositoryImpl {
                 created_at as "created_at: DateTime<Utc>", 
                 updated_at as "updated_at: DateTime<Utc>"
             FROM users
-            WHERE id = ?1
+            WHERE email = ?1
             "#,
-            user_id,
+            email,
         )
         .fetch_optional(&self.pool)
         .await?;

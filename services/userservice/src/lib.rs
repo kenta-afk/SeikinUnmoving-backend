@@ -11,6 +11,12 @@ pub enum ServiceError {
     Database(#[from] DbError),
     #[error("JWT error: {0}")]
     Jwt(#[from] jsonwebtoken::errors::Error),
+    #[error("password verification failed")]
+    PasswordVerificationFailed,
+    #[error("user not found")]
+    UserNotFound,
+    #[error("client not found")]
+    ClientNotFound,
 }
 
 #[allow(dead_code)]

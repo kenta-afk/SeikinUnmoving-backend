@@ -1,9 +1,17 @@
 use sqlx::SqlitePool;
 
-use crate::domain::{
-    models::{client::Client, error::DbError},
-    repositories::client_repository::ClientRepository,
+use crate::{
+    domain::{
+        models::{
+            client::Client,
+            error::DbError,
+            id::{ClientId, UserId},
+        },
+        repositories::client_repository::ClientRepository,
+    },
+    infrastructure::repositories::client::db_client::DbClient,
 };
+use uuid::Uuid;
 
 pub struct ClientRepositoryImpl {
     pub pool: SqlitePool,
@@ -18,7 +26,7 @@ impl ClientRepositoryImpl {
 
 #[async_trait::async_trait]
 impl ClientRepository for ClientRepositoryImpl {
-    async fn save(&self, client: Client) -> Result<(), DbError> {
+    async fn create(&self, client: Client) -> Result<(), DbError> {
         sqlx::query!(
             r#"
             INSERT INTO clients (id, user_id, jti, exp, created_at)
@@ -29,6 +37,42 @@ impl ClientRepository for ClientRepositoryImpl {
             client.jti,
             client.exp,
             client.created_at,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+    async fn get_by_user_id(&self, user_id: UserId) -> Result<Option<Client>, DbError> {
+        let record = sqlx::query_as!(
+            DbClient,
+            r#"
+            SELECT 
+                id as "id: ClientId", 
+                user_id as "user_id: UserId", 
+                jti as "jti: Uuid", 
+                exp as "exp: i64", 
+                created_at as "created_at: i64"
+            FROM clients
+            WHERE user_id = ?1
+            "#,
+            user_id,
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(record.map(Into::into))
+    }
+    async fn save(&self, client: Client) -> Result<(), DbError> {
+        sqlx::query!(
+            r#"
+            UPDATE clients
+            SET jti = ?1, exp = ?2
+            WHERE id = ?3
+            "#,
+            client.jti,
+            client.exp,
+            client.id,
         )
         .execute(&self.pool)
         .await?;

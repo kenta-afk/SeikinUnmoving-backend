@@ -6,15 +6,15 @@ use crate::{
             secret_service::SecretService,
             uuid_service::UuidService,
         },
-        service::signup::{command::SignUpCommand, dto::SignUpDto},
+        service::signin::{command::SignInCommand, dto::SignInDto},
     },
     domain::{
-        models::{client::Client, jwt::JwtClaims, refresh_token::RefreshClaims, user::User},
+        models::{jwt::JwtClaims, refresh_token::RefreshClaims},
         repositories::{client_repository::ClientRepository, user_repository::UserRepository},
     },
 };
 
-pub struct SignUpUseCase<
+pub struct SignInUseCase<
     UR: UserRepository,
     CR: ClientRepository,
     IP: UuidService,
@@ -27,7 +27,7 @@ pub struct SignUpUseCase<
 }
 
 #[allow(dead_code)]
-impl<UR, CR, IP, SS> SignUpUseCase<UR, CR, IP, SS>
+impl<UR, CR, IP, SS> SignInUseCase<UR, CR, IP, SS>
 where
     UR: UserRepository,
     CR: ClientRepository,
@@ -45,21 +45,25 @@ where
 }
 
 #[allow(dead_code)]
-impl<UR, CR, IP, SS> SignUpUseCase<UR, CR, IP, SS>
+impl<UR, CR, IP, SS> SignInUseCase<UR, CR, IP, SS>
 where
     UR: UserRepository,
     CR: ClientRepository,
     IP: UuidService,
     SS: SecretService,
 {
-    async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError> {
-        let user = User::new(
-            command.name,
-            command.email,
-            command.password,
-            &self.uuid_service,
-            &self.secret_service,
-        );
+    async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError> {
+        if !self
+            .secret_service
+            .verify_password(&command.password, &command.password)
+        {
+            return Err(ServiceError::PasswordVerificationFailed);
+        }
+
+        let user = match self.user_repo.get_by_email(&command.email).await? {
+            Some(user) => user,
+            None => return Err(ServiceError::UserNotFound),
+        };
 
         let jwt_claims = JwtClaims::new(user.id, JWT_EXPIRATION_SECONDS);
         let refresh_token_claims =
@@ -70,16 +74,19 @@ where
             .secret_service
             .create_refresh_token(&refresh_token_claims)?;
 
-        let client = Client::new(
+        let mut client = match self.client_repo.get_by_user_id(user.id).await? {
+            Some(client) => client,
+            None => return Err(ServiceError::ClientNotFound),
+        };
+
+        let updated_client = client.update(
             user.id,
             refresh_token_claims.jti,
             refresh_token_claims.exp,
             &self.uuid_service,
         );
+        self.client_repo.save(updated_client).await?;
 
-        self.user_repo.create(user).await?;
-        self.client_repo.create(client).await?;
-
-        Ok(SignUpDto { jwt, refresh_token })
+        Ok(SignInDto { jwt, refresh_token })
     }
 }
