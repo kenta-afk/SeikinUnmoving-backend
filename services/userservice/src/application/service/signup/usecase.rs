@@ -1,28 +1,21 @@
 use crate::{
     ServiceError,
     application::{
-        command::signup::SignUpCommand,
-        dto::signup::SignUpDto,
         ports::{secret_service::SecretService, uuid_service::UuidService},
+        service::signup::{
+            command::SignUpCommand,
+            constant::{JWT_EXPIRATION_SECONDS, REFRESH_TOKEN_EXPIRATION_DAYS},
+            dto::SignUpDto,
+        },
     },
     domain::{
-        models::{
-            client::Client,
-            constant::{JWT_EXPIRATION_SECONDS, REFRESH_TOKEN_EXPIRATION_DAYS},
-            jwt::JwtClaims,
-            refresh_token::RefreshClaims,
-            user::User,
-        },
+        models::{client::Client, jwt::JwtClaims, refresh_token::RefreshClaims, user::User},
         repositories::{client_repository::ClientRepository, user_repository::UserRepository},
     },
 };
 
-pub struct UserServiceImpl<
-    UR: UserRepository,
-    CR: ClientRepository,
-    IP: UuidService,
-    SS: SecretService,
-> {
+pub struct SignUpImpl<UR: UserRepository, CR: ClientRepository, IP: UuidService, SS: SecretService>
+{
     user_repo: UR,
     client_repo: CR,
     uuid_service: IP,
@@ -30,7 +23,7 @@ pub struct UserServiceImpl<
 }
 
 #[allow(dead_code)]
-impl<UR, CR, IP, SS> UserServiceImpl<UR, CR, IP, SS>
+impl<UR, CR, IP, SS> SignUpImpl<UR, CR, IP, SS>
 where
     UR: UserRepository,
     CR: ClientRepository,
@@ -48,7 +41,7 @@ where
 }
 
 #[allow(dead_code)]
-impl<UR, CR, IP, SS> UserServiceImpl<UR, CR, IP, SS>
+impl<UR, CR, IP, SS> SignUpImpl<UR, CR, IP, SS>
 where
     UR: UserRepository,
     CR: ClientRepository,

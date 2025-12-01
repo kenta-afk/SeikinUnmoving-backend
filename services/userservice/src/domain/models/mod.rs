@@ -1,5 +1,4 @@
 pub mod client;
-pub mod constant;
 pub mod error;
 pub mod id;
 pub mod jwt;

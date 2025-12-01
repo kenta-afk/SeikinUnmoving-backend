@@ -1,4 +1,2 @@
-pub mod command;
-pub mod dto;
 pub mod ports;
-pub mod user_service;
+pub mod service;
