@@ -11,6 +11,7 @@ use crate::{
     },
     infrastructure::repositories::client::db_client::DbClient,
 };
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 pub struct ClientRepositoryImpl {
@@ -51,8 +52,8 @@ impl ClientRepository for ClientRepositoryImpl {
                 id as "id: ClientId", 
                 user_id as "user_id: UserId", 
                 jti as "jti: Uuid", 
-                exp as "exp: i64", 
-                created_at as "created_at: i64"
+                exp as "exp: DateTime<Utc>", 
+                created_at as "created_at: DateTime<Utc>"
             FROM clients
             WHERE user_id = ?1
             "#,

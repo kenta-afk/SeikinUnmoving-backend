@@ -63,4 +63,26 @@ impl UserRepository for UserRepositoryImpl {
 
         Ok(record.map(Into::into))
     }
+    async fn get_by_id(&self, id: UserId) -> Result<Option<User>, DbError> {
+        let record = sqlx::query_as!(
+            DbUser,
+            r#"
+            SELECT 
+                id as "id: UserId", 
+                name, 
+                email, 
+                password, 
+                seikin_similarity,
+                created_at as "created_at: DateTime<Utc>", 
+                updated_at as "updated_at: DateTime<Utc>"
+            FROM users
+            WHERE id = ?1
+            "#,
+            id,
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        Ok(record.map(Into::into))
+    }
 }
