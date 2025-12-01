@@ -1,6 +1,9 @@
 use uuid::Uuid;
 
-use crate::domain::models::id::{ClientId, UserId};
+use crate::{
+    application::ports::uuid_service::UuidService,
+    domain::models::id::{ClientId, UserId},
+};
 
 pub struct Client {
     pub id: ClientId,
@@ -11,12 +14,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(
-        user_id: UserId,
-        jti: Uuid,
-        exp: i64,
-        uuid_service: &impl crate::domain::services::uuid_service::UuidService,
-    ) -> Self {
+    pub fn new(user_id: UserId, jti: Uuid, exp: i64, uuid_service: &impl UuidService) -> Self {
         Self {
             id: ClientId::new(uuid_service),
             user_id,

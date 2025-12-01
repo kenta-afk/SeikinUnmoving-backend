@@ -1,3 +1,2 @@
-pub mod client_repository;
-pub mod dto;
-pub mod user_repository;
+pub mod client;
+pub mod user;

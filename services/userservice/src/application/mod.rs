@@ -1,4 +1,4 @@
-pub mod adapter;
 pub mod command;
 pub mod dto;
+pub mod ports;
 pub mod user_service;

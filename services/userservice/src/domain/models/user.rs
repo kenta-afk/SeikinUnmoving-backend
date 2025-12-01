@@ -1,6 +1,6 @@
-use crate::domain::{
-    models::id::UserId,
-    services::{secret_service::SecretService, uuid_service::UuidService},
+use crate::{
+    application::ports::{secret_service::SecretService, uuid_service::UuidService},
+    domain::models::id::UserId,
 };
 use chrono::{DateTime, Utc};
 

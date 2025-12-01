@@ -1,6 +1,6 @@
-use crate::domain::{
-    models::{jwt::JwtClaims, refresh_token::RefreshClaims},
-    services::secret_service::SecretService,
+use crate::{
+    application::ports::secret_service::SecretService,
+    domain::models::{jwt::JwtClaims, refresh_token::RefreshClaims},
 };
 use argon2::{
     Argon2, PasswordHasher, PasswordVerifier,

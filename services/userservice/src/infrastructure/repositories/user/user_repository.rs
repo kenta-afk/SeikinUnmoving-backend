@@ -6,7 +6,7 @@ use crate::{
         models::{error::DbError, id::UserId, user::User},
         repositories::user_repository::UserRepository,
     },
-    infrastructure::repositories::dto::user::db_user::DbUser,
+    infrastructure::repositories::user::db_user::DbUser,
 };
 
 pub struct UserRepositoryImpl {

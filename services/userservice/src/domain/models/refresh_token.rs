@@ -1,4 +1,4 @@
-use crate::domain::{models::id::UserId, services::uuid_service::UuidService};
+use crate::{application::ports::uuid_service::UuidService, domain::models::id::UserId};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

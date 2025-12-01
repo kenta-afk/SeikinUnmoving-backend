@@ -1,6 +1,10 @@
 use crate::{
     ServiceError,
-    application::{command::signup::SignUpCommand, dto::signup::SignUpDto},
+    application::{
+        command::signup::SignUpCommand,
+        dto::signup::SignUpDto,
+        ports::{secret_service::SecretService, uuid_service::UuidService},
+    },
     domain::{
         models::{
             client::Client,
@@ -10,7 +14,6 @@ use crate::{
             user::User,
         },
         repositories::{client_repository::ClientRepository, user_repository::UserRepository},
-        services::{secret_service::SecretService, uuid_service::UuidService},
     },
 };
 
