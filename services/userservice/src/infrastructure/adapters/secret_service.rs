@@ -9,7 +9,7 @@ use argon2::{
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, encode};
 use rand::RngCore;
 
-#[allow(dead_code)]
+#[derive(Clone)]
 pub struct SecretServiceImpl {
     encoding_key: EncodingKey,
     decoding_key: DecodingKey,

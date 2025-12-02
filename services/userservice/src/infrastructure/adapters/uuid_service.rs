@@ -2,7 +2,7 @@ use uuid::Uuid;
 
 use crate::application::ports::uuid_service::UuidService;
 
-#[allow(dead_code)]
+#[derive(Clone)]
 pub struct UuidServiceImpl;
 
 impl UuidService for UuidServiceImpl {

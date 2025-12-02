@@ -23,9 +23,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .json()
         .init();
 
-    let host = env::var("APIROUTE").expect("APIROUTE must be set");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let secret_key = env::var("SECRET_KEY").expect("SECRET_KEY must be set");
 
-    tracing::info!("Tracing initialized");
+    let _user_service = userservice::build_service(&database_url, &secret_key);
+
+    let host = env::var("APIROUTE").expect("APIROUTE must be set");
 
     let router = router::build::build_router();
 

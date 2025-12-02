@@ -23,7 +23,7 @@ impl<UR> GetUserUseCase<UR>
 where
     UR: UserRepository,
 {
-    async fn signin(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError> {
+    pub async fn execute(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError> {
         let user = self
             .user_repo
             .get_by_id(command.user_id)

@@ -9,6 +9,7 @@ use crate::{
     infrastructure::repositories::user::db_user::DbUser,
 };
 
+#[derive(Clone)]
 pub struct UserRepositoryImpl {
     pub pool: SqlitePool,
 }

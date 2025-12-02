@@ -52,7 +52,7 @@ where
     IP: UuidService,
     SS: SecretService,
 {
-    async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError> {
+    pub async fn execute(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError> {
         let user = User::new(
             command.name,
             command.email,

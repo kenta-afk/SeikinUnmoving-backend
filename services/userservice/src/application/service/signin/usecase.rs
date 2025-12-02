@@ -52,7 +52,7 @@ where
     IP: UuidService,
     SS: SecretService,
 {
-    async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError> {
+    pub async fn execute(&self, command: SignInCommand) -> Result<SignInDto, ServiceError> {
         if !self
             .secret_service
             .verify_password(&command.password, &command.password)

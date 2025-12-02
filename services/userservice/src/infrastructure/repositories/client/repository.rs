@@ -14,6 +14,7 @@ use crate::{
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+#[derive(Clone)]
 pub struct ClientRepositoryImpl {
     pub pool: SqlitePool,
 }
