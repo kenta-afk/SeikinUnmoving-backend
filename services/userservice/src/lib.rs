@@ -57,10 +57,10 @@ where
 
 impl<UR, CR, IP, SS> UserService<UR, CR, IP, SS>
 where
-    UR: UserRepository + Clone,
-    CR: ClientRepository + Clone,
-    IP: UuidService + Clone,
-    SS: SecretService + Clone,
+    UR: UserRepository,
+    CR: ClientRepository,
+    IP: UuidService,
+    SS: SecretService,
 {
     pub fn new(user_repo: UR, client_repo: CR, uuid_service: IP, secret_service: SS) -> Self {
         Self {

@@ -1,8 +1,7 @@
 use crate::domain::models::{jwt::JwtClaims, refresh_token::RefreshClaims};
 
 #[cfg_attr(test, mockall::automock)]
-#[allow(dead_code)]
-pub trait SecretService: Send + Sync {
+pub trait SecretService: Send + Sync + Clone {
     fn create_secret(&self) -> String;
     fn hash_password(&self, password: &str) -> String;
     fn verify_password(&self, hashed: &str, password: &str) -> bool;
@@ -16,4 +15,11 @@ pub trait SecretService: Send + Sync {
         &self,
         refresh_token: &str,
     ) -> Result<RefreshClaims, jsonwebtoken::errors::Error>;
+}
+
+#[cfg(test)]
+impl Clone for MockSecretService {
+    fn clone(&self) -> Self {
+        Self::default()
+    }
 }
