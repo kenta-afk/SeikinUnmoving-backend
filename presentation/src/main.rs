@@ -1,4 +1,4 @@
-mod router;
+mod routes;
 
 use std::env;
 use tokio::net::TcpListener;
@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let host = env::var("APIROUTE").expect("APIROUTE must be set");
 
-    let router = router::build::build_router();
+    let router = routes::build::build_router();
 
     let listener = TcpListener::bind(host).await?;
 
