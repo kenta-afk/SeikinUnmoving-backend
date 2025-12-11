@@ -17,12 +17,12 @@ services:
   apiroute:
     build:
       context: .
-      dockerfile: apiroute/dev/Dockerfile
+      dockerfile: presentation/dev/Dockerfile
     container_name: seikin-apiroute
     ports:
       - "8080:8080"
     env_file:
-      - apiroute/dev/.env
+      - presentation/dev/.env
     volumes:
       - sqlite_data:/data
     depends_on:

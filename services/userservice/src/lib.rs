@@ -15,12 +15,10 @@ mod domain;
 mod infrastructure;
 
 pub use application::{
+    command::{GetUserCommand, SignInCommand, SignUpCommand},
+    dto::{GetUserDto, SignInDto, SignUpDto},
     ports::{secret_service::SecretService, uuid_service::UuidService},
-    service::{
-        get_user::{command::GetUserCommand, dto::GetUserDto, usecase::GetUserUseCase},
-        signin::{command::SignInCommand, dto::SignInDto, usecase::SignInUseCase},
-        signup::{command::SignUpCommand, dto::SignUpDto, usecase::SignUpUseCase},
-    },
+    userservice::UserServiceImpl,
 };
 pub use domain::repositories::{
     client_repository::ClientRepository, user_repository::UserRepository,
@@ -40,66 +38,16 @@ pub enum ServiceError {
     ClientNotFound,
 }
 
-pub type UserServiceInstance =
-    UserService<UserRepositoryImpl, ClientRepositoryImpl, UuidServiceImpl, SecretServiceImpl>;
-
-pub struct UserService<UR, CR, IP, SS>
-where
-    UR: UserRepository,
-    CR: ClientRepository,
-    IP: UuidService,
-    SS: SecretService,
-{
-    signup_usecase: SignUpUseCase<UR, CR, IP, SS>,
-    signin_usecase: SignInUseCase<UR, CR, IP, SS>,
-    get_user_usecase: GetUserUseCase<UR>,
-}
-
-impl<UR, CR, IP, SS> UserService<UR, CR, IP, SS>
-where
-    UR: UserRepository,
-    CR: ClientRepository,
-    IP: UuidService,
-    SS: SecretService,
-{
-    pub fn new(user_repo: UR, client_repo: CR, uuid_service: IP, secret_service: SS) -> Self {
-        Self {
-            signup_usecase: SignUpUseCase::new(
-                user_repo.clone(),
-                client_repo.clone(),
-                uuid_service.clone(),
-                secret_service.clone(),
-            ),
-            signin_usecase: SignInUseCase::new(
-                user_repo.clone(),
-                client_repo.clone(),
-                uuid_service.clone(),
-                secret_service.clone(),
-            ),
-            get_user_usecase: GetUserUseCase::new(user_repo),
-        }
-    }
-
-    pub async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError> {
-        self.signup_usecase.execute(command).await
-    }
-
-    pub async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError> {
-        self.signin_usecase.execute(command).await
-    }
-
-    pub async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError> {
-        self.get_user_usecase.execute(command).await
-    }
-}
+pub type UserService =
+    UserServiceImpl<UserRepositoryImpl, ClientRepositoryImpl, UuidServiceImpl, SecretServiceImpl>;
 
 pub async fn build_service(
     db_url: &str,
     secret_key: &str,
-) -> Result<UserServiceInstance, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<UserService, Box<dyn std::error::Error + Send + Sync>> {
     let pool = Pool::<Sqlite>::connect(db_url).await?;
 
-    Ok(UserService::new(
+    Ok(UserServiceImpl::new(
         UserRepositoryImpl::new(pool.clone()),
         ClientRepositoryImpl::new(pool),
         UuidServiceImpl,
