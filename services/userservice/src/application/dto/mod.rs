@@ -1,7 +1,7 @@
-mod get_user_dto;
-mod signin_dto;
-mod signup_dto;
+mod get_user;
+mod signin;
+mod signup;
 
-pub use get_user_dto::GetUserDto;
-pub use signin_dto::SignInDto;
-pub use signup_dto::SignUpDto;
+pub use get_user::GetUserDto;
+pub use signin::SignInDto;
+pub use signup::SignUpDto;

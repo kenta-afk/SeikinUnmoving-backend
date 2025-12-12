@@ -1,7 +1,7 @@
-mod get_user_command;
-mod signin_command;
-mod signup_command;
+mod get_user;
+mod signin;
+mod signup;
 
-pub use get_user_command::GetUserCommand;
-pub use signin_command::SignInCommand;
-pub use signup_command::SignUpCommand;
+pub use get_user::GetUserCommand;
+pub use signin::SignInCommand;
+pub use signup::SignUpCommand;
