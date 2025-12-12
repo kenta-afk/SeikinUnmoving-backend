@@ -20,8 +20,9 @@ pub use application::{
     ports::{secret_service::SecretService, uuid_service::UuidService},
     userservice::{UserService, UserServiceImpl},
 };
-pub use domain::repositories::{
-    client_repository::ClientRepository, user_repository::UserRepository,
+pub use domain::{
+    models::id::UserId,
+    repositories::{client_repository::ClientRepository, user_repository::UserRepository},
 };
 
 #[derive(Error, Debug)]
@@ -38,10 +39,13 @@ pub enum ServiceError {
     ClientNotFound,
 }
 
+pub type ConcreteUserService =
+    UserServiceImpl<UserRepositoryImpl, ClientRepositoryImpl, UuidServiceImpl, SecretServiceImpl>;
+
 pub async fn build_service(
     db_url: &str,
     secret_key: &str,
-) -> Result<impl UserService, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<ConcreteUserService, Box<dyn std::error::Error + Send + Sync>> {
     let pool = Pool::<Sqlite>::connect(db_url).await?;
 
     Ok(UserServiceImpl::new(

@@ -14,10 +14,9 @@ use crate::{
         repositories::{client_repository::ClientRepository, user_repository::UserRepository},
     },
 };
-use async_trait::async_trait;
 
-#[async_trait]
-pub trait UserService: Send + Sync {
+#[async_trait::async_trait]
+pub trait UserService: Send + Sync + 'static {
     async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError>;
     async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError>;
     async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError>;
@@ -34,6 +33,23 @@ where
     client_repo: CR,
     uuid_service: IP,
     secret_service: SS,
+}
+
+impl<UR, CR, IP, SS> Clone for UserServiceImpl<UR, CR, IP, SS>
+where
+    UR: UserRepository,
+    CR: ClientRepository,
+    IP: UuidService,
+    SS: SecretService,
+{
+    fn clone(&self) -> Self {
+        Self {
+            user_repo: self.user_repo.clone(),
+            client_repo: self.client_repo.clone(),
+            uuid_service: self.uuid_service.clone(),
+            secret_service: self.secret_service.clone(),
+        }
+    }
 }
 
 impl<UR, CR, IP, SS> UserServiceImpl<UR, CR, IP, SS>
@@ -53,7 +69,7 @@ where
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl<UR, CR, IP, SS> UserService for UserServiceImpl<UR, CR, IP, SS>
 where
     UR: UserRepository,

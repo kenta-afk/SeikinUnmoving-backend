@@ -1,7 +1,7 @@
 use crate::domain::models::{jwt::JwtClaims, refresh_token::RefreshClaims};
 
 #[cfg_attr(test, mockall::automock)]
-pub trait SecretService: Send + Sync + Clone {
+pub trait SecretService: Send + Sync + Clone + 'static {
     fn create_secret(&self) -> String;
     fn hash_password(&self, password: &str) -> String;
     fn verify_password(&self, hashed: &str, password: &str) -> bool;

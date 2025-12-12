@@ -1,4 +1,5 @@
 mod routes;
+mod state;
 
 use std::env;
 use tokio::net::TcpListener;
@@ -26,11 +27,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let secret_key = env::var("SECRET_KEY").expect("SECRET_KEY must be set");
 
-    let _user_service = userservice::build_service(&database_url, &secret_key);
+    let user_service = userservice::build_service(&database_url, &secret_key)
+        .await
+        .map_err(|e| format!("Failed to build service: {}", e))?;
+
+    let app_state = state::AppState { user_service };
 
     let host = env::var("APIROUTE").expect("APIROUTE must be set");
 
-    let router = routes::build::build_router();
+    let router = routes::build::build_router(app_state);
 
     let listener = TcpListener::bind(host).await?;
 

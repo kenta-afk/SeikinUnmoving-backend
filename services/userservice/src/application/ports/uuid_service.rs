@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 #[cfg_attr(test, mockall::automock)]
-pub trait UuidService: Send + Sync + Clone {
+pub trait UuidService: Send + Sync + Clone + 'static {
     fn new_v7(&self) -> Uuid;
 }
 
