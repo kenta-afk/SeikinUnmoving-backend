@@ -14,6 +14,14 @@ use crate::{
         repositories::{client_repository::ClientRepository, user_repository::UserRepository},
     },
 };
+use async_trait::async_trait;
+
+#[async_trait]
+pub trait UserService: Send + Sync {
+    async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError>;
+    async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError>;
+    async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError>;
+}
 
 pub struct UserServiceImpl<UR, CR, IP, SS>
 where
@@ -43,8 +51,17 @@ where
             secret_service,
         }
     }
+}
 
-    pub async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError> {
+#[async_trait]
+impl<UR, CR, IP, SS> UserService for UserServiceImpl<UR, CR, IP, SS>
+where
+    UR: UserRepository,
+    CR: ClientRepository,
+    IP: UuidService,
+    SS: SecretService,
+{
+    async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError> {
         let user = User::new(
             command.name,
             command.email,
@@ -75,7 +92,7 @@ where
         Ok(SignUpDto { jwt, refresh_token })
     }
 
-    pub async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError> {
+    async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError> {
         if !self
             .secret_service
             .verify_password(&command.password, &command.password)
@@ -113,7 +130,7 @@ where
         Ok(SignInDto { jwt, refresh_token })
     }
 
-    pub async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError> {
+    async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError> {
         let user = self
             .user_repo
             .get_by_id(command.user_id)

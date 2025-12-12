@@ -18,7 +18,7 @@ pub use application::{
     command::{GetUserCommand, SignInCommand, SignUpCommand},
     dto::{GetUserDto, SignInDto, SignUpDto},
     ports::{secret_service::SecretService, uuid_service::UuidService},
-    userservice::UserServiceImpl,
+    userservice::{UserService, UserServiceImpl},
 };
 pub use domain::repositories::{
     client_repository::ClientRepository, user_repository::UserRepository,
@@ -38,13 +38,10 @@ pub enum ServiceError {
     ClientNotFound,
 }
 
-pub type UserService =
-    UserServiceImpl<UserRepositoryImpl, ClientRepositoryImpl, UuidServiceImpl, SecretServiceImpl>;
-
 pub async fn build_service(
     db_url: &str,
     secret_key: &str,
-) -> Result<UserService, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<impl UserService, Box<dyn std::error::Error + Send + Sync>> {
     let pool = Pool::<Sqlite>::connect(db_url).await?;
 
     Ok(UserServiceImpl::new(
