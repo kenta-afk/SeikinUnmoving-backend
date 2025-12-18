@@ -109,17 +109,17 @@ where
     }
 
     async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError> {
-        if !self
-            .secret_service
-            .verify_password(&command.password, &command.password)
-        {
-            return Err(ServiceError::PasswordVerificationFailed);
-        }
-
         let user = match self.user_repo.get_by_email(&command.email).await? {
             Some(user) => user,
             None => return Err(ServiceError::UserNotFound),
         };
+
+        if !self
+            .secret_service
+            .verify_password(&user.password, &command.password)
+        {
+            return Err(ServiceError::PasswordVerificationFailed);
+        }
 
         let jwt_claims = JwtClaims::new(user.id, JWT_EXPIRATION_SECONDS);
         let refresh_token_claims =

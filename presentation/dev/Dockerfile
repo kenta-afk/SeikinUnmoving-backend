@@ -19,7 +19,7 @@ WORKDIR /app
 
 # Copy workspace files
 COPY Cargo.toml Cargo.lock ./
-COPY apiroute ./apiroute
+COPY presentation ./presentation
 COPY services ./services
 COPY .sqlx ./.sqlx
 
@@ -27,15 +27,15 @@ COPY .sqlx ./.sqlx
 COPY db/migrations /app/db/migrations
 
 # Copy the env file
-COPY apiroute/dev/.env /app/.env
+COPY presentation/dev/.env /app/.env
 
 # Build the application in debug mode for faster compilation
-# Use offline mode with pre-generated query metadata
+
 ENV SQLX_OFFLINE=true
 RUN cargo build --package apiroute
 
 # Copy entrypoint script
-COPY apiroute/dev/entrypoint.sh /app/entrypoint.sh
+COPY presentation/dev/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8080

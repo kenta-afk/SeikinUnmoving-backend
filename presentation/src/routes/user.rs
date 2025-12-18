@@ -2,21 +2,32 @@ use crate::state::UserServiceState;
 use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use userservice::{GetUserCommand, SignInCommand, SignUpCommand, UserId, UserService};
+use utoipa::ToSchema;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct SignUpRequest {
     pub name: String,
     pub email: String,
     pub password: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct SignUpResponse {
     pub jwt: String,
     pub refresh_token: String,
 }
 
-/// Example handler that uses UserServiceState extracted from AppState
+/// Sign up a new user
+#[utoipa::path(
+    post,
+    path = "/user/signup",
+    tag = "user",
+    request_body = SignUpRequest,
+    responses(
+        (status = 200, description = "User successfully signed up", body = SignUpResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
 pub async fn signup<T>(
     State(UserServiceState(service)): State<UserServiceState<T>>,
     Json(payload): Json<SignUpRequest>,
@@ -39,18 +50,29 @@ where
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct SignInRequest {
     pub email: String,
     pub password: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct SignInResponse {
     pub jwt: String,
     pub refresh_token: String,
 }
 
+/// Sign in an existing user
+#[utoipa::path(
+    post,
+    path = "/user/signin",
+    tag = "user",
+    request_body = SignInRequest,
+    responses(
+        (status = 200, description = "User successfully signed in", body = SignInResponse),
+        (status = 401, description = "Unauthorized")
+    )
+)]
 pub async fn signin<T>(
     State(UserServiceState(service)): State<UserServiceState<T>>,
     Json(payload): Json<SignInRequest>,
@@ -72,12 +94,12 @@ where
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct GetUserRequest {
     pub user_id: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct GetUserResponse {
     pub user_id: String,
     pub email: String,
@@ -85,6 +107,18 @@ pub struct GetUserResponse {
     pub seikin_similarity: f64,
 }
 
+/// Get user information
+#[utoipa::path(
+    post,
+    path = "/user",
+    tag = "user",
+    request_body = GetUserRequest,
+    responses(
+        (status = 200, description = "User found", body = GetUserResponse),
+        (status = 400, description = "Bad request"),
+        (status = 404, description = "User not found")
+    )
+)]
 pub async fn get_user<T>(
     State(UserServiceState(service)): State<UserServiceState<T>>,
     Json(payload): Json<GetUserRequest>,
