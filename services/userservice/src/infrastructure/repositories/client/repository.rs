@@ -7,7 +7,7 @@ use crate::{
             error::DbError,
             id::{ClientId, UserId},
         },
-        repositories::client_repository::ClientRepository,
+        repositories::client::client_repository::ClientRepository,
     },
     infrastructure::repositories::client::db_client::DbClient,
 };

@@ -11,7 +11,9 @@ use crate::{
     },
     domain::{
         models::{client::Client, jwt::JwtClaims, refresh_token::RefreshClaims, user::User},
-        repositories::{client_repository::ClientRepository, user_repository::UserRepository},
+        repositories::{
+            client::client_repository::ClientRepository, user::user_repository::UserRepository,
+        },
     },
 };
 
@@ -86,9 +88,9 @@ where
             &self.secret_service,
         );
 
-        let jwt_claims = JwtClaims::new(user.id, JWT_EXPIRATION_SECONDS);
+        let jwt_claims = JwtClaims::new(user.id(), JWT_EXPIRATION_SECONDS);
         let refresh_token_claims =
-            RefreshClaims::new(user.id, &self.uuid_service, REFRESH_TOKEN_EXPIRATION_DAYS);
+            RefreshClaims::new(user.id(), &self.uuid_service, REFRESH_TOKEN_EXPIRATION_DAYS);
 
         let jwt = self.secret_service.create_jwt(&jwt_claims)?;
         let refresh_token = self
@@ -96,13 +98,13 @@ where
             .create_refresh_token(&refresh_token_claims)?;
 
         let client = Client::new(
-            user.id,
+            user.id(),
             refresh_token_claims.jti,
             refresh_token_claims.exp,
             &self.uuid_service,
         );
 
-        self.user_repo.create(user).await?;
+        self.user_repo.create(user.into_create()).await?;
         self.client_repo.create(client).await?;
 
         Ok(SignUpDto { jwt, refresh_token })
@@ -116,27 +118,27 @@ where
 
         if !self
             .secret_service
-            .verify_password(&user.password, &command.password)
+            .verify_password(user.password(), &command.password)
         {
             return Err(ServiceError::PasswordVerificationFailed);
         }
 
-        let jwt_claims = JwtClaims::new(user.id, JWT_EXPIRATION_SECONDS);
+        let jwt_claims = JwtClaims::new(user.id(), JWT_EXPIRATION_SECONDS);
         let refresh_token_claims =
-            RefreshClaims::new(user.id, &self.uuid_service, REFRESH_TOKEN_EXPIRATION_DAYS);
+            RefreshClaims::new(user.id(), &self.uuid_service, REFRESH_TOKEN_EXPIRATION_DAYS);
 
         let jwt = self.secret_service.create_jwt(&jwt_claims)?;
         let refresh_token = self
             .secret_service
             .create_refresh_token(&refresh_token_claims)?;
 
-        let mut client = match self.client_repo.get_by_user_id(user.id).await? {
+        let mut client = match self.client_repo.get_by_user_id(user.id()).await? {
             Some(client) => client,
             None => return Err(ServiceError::ClientNotFound),
         };
 
         let updated_client = client.update(
-            user.id,
+            user.id(),
             refresh_token_claims.jti,
             refresh_token_claims.exp,
             &self.uuid_service,
@@ -153,11 +155,6 @@ where
             .await?
             .ok_or(ServiceError::UserNotFound)?;
 
-        Ok(GetUserDto {
-            user_id: user.id,
-            email: user.email,
-            name: user.name,
-            seikin_similarity: user.seikin_similarity,
-        })
+        Ok(user.into_get())
     }
 }

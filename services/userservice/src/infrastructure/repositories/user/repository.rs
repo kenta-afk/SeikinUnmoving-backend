@@ -4,7 +4,7 @@ use sqlx::SqlitePool;
 use crate::{
     domain::{
         models::{error::DbError, id::UserId, user::User},
-        repositories::user_repository::UserRepository,
+        repositories::user::{create_user::CreateUser, user_repository::UserRepository},
     },
     infrastructure::repositories::user::db_user::DbUser,
 };
@@ -23,7 +23,7 @@ impl UserRepositoryImpl {
 
 #[async_trait::async_trait]
 impl UserRepository for UserRepositoryImpl {
-    async fn create(&self, user: User) -> Result<(), DbError> {
+    async fn create(&self, user: CreateUser) -> Result<(), DbError> {
         sqlx::query!(
             r#"
             INSERT INTO users (id, name, email, password, seikin_similarity, created_at, updated_at)
@@ -62,7 +62,7 @@ impl UserRepository for UserRepositoryImpl {
         .fetch_optional(&self.pool)
         .await?;
 
-        Ok(record.map(Into::into))
+        Ok(record.map(User::from_db))
     }
     async fn get_by_id(&self, id: UserId) -> Result<Option<User>, DbError> {
         let record = sqlx::query_as!(
@@ -84,6 +84,6 @@ impl UserRepository for UserRepositoryImpl {
         .fetch_optional(&self.pool)
         .await?;
 
-        Ok(record.map(Into::into))
+        Ok(record.map(User::from_db))
     }
 }

@@ -22,7 +22,9 @@ pub use application::{
 };
 pub use domain::{
     models::id::UserId,
-    repositories::{client_repository::ClientRepository, user_repository::UserRepository},
+    repositories::{
+        client::client_repository::ClientRepository, user::user_repository::UserRepository,
+    },
 };
 
 #[derive(Error, Debug)]
