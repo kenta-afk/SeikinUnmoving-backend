@@ -7,7 +7,10 @@ use crate::{
             error::DbError,
             id::{ClientId, UserId},
         },
-        repositories::client::client_repository::ClientRepository,
+        repositories::client::{
+            client_repository::ClientRepository, create_client::CreateClient,
+            save_client::SaveClient,
+        },
     },
     infrastructure::repositories::client::db_client::DbClient,
 };
@@ -28,7 +31,7 @@ impl ClientRepositoryImpl {
 
 #[async_trait::async_trait]
 impl ClientRepository for ClientRepositoryImpl {
-    async fn create(&self, client: Client) -> Result<(), DbError> {
+    async fn create(&self, client: CreateClient) -> Result<(), DbError> {
         sqlx::query!(
             r#"
             INSERT INTO clients (id, user_id, jti, exp, created_at)
@@ -65,7 +68,7 @@ impl ClientRepository for ClientRepositoryImpl {
 
         Ok(record.map(Into::into))
     }
-    async fn save(&self, client: Client) -> Result<(), DbError> {
+    async fn save(&self, client: SaveClient) -> Result<(), DbError> {
         sqlx::query!(
             r#"
             UPDATE clients

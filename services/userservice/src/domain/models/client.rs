@@ -2,7 +2,10 @@ use uuid::Uuid;
 
 use crate::{
     application::ports::uuid_service::UuidService,
-    domain::models::id::{ClientId, UserId},
+    domain::{
+        models::id::{ClientId, UserId},
+        repositories::client::{create_client::CreateClient, save_client::SaveClient},
+    },
 };
 use chrono::{DateTime, Utc};
 
@@ -40,5 +43,23 @@ impl Client {
         self.exp = exp;
 
         Client::new(user_id, jti, exp, uuid_service)
+    }
+    pub fn into_create(self) -> CreateClient {
+        CreateClient {
+            id: self.id,
+            user_id: self.user_id,
+            jti: self.jti,
+            exp: self.exp,
+            created_at: self.created_at,
+        }
+    }
+    pub fn into_save(self) -> SaveClient {
+        SaveClient {
+            id: self.id,
+            user_id: self.user_id,
+            jti: self.jti,
+            exp: self.exp,
+            created_at: self.created_at,
+        }
     }
 }

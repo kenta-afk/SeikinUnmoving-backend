@@ -105,7 +105,7 @@ where
         );
 
         self.user_repo.create(user.into_create()).await?;
-        self.client_repo.create(client).await?;
+        self.client_repo.create(client.into_create()).await?;
 
         Ok(SignUpDto { jwt, refresh_token })
     }
@@ -143,7 +143,7 @@ where
             refresh_token_claims.exp,
             &self.uuid_service,
         );
-        self.client_repo.save(updated_client).await?;
+        self.client_repo.save(updated_client.into_save()).await?;
 
         Ok(SignInDto { jwt, refresh_token })
     }
