@@ -13,6 +13,10 @@ serde_json = "1.0"
 console_error_panic_hook = "0.1"
 utoipa = { version = "5.4.0", features = ["macros"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+axum-extra = { version = "0.12.3", features = ["cookie"] }
+tower-http = { version = "0.6.8", features = ["cors"] }
+async-trait = "0.1.89"
+jsonwebtoken = "10.2.0"
 
 # 開発環境用（Dockerなど）
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

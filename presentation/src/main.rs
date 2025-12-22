@@ -1,3 +1,4 @@
+mod extractors;
 mod routes;
 mod state;
 
@@ -31,7 +32,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .map_err(|e| format!("Failed to build service: {}", e))?;
 
-    let app_state = state::AppState { user_service };
+    let jwt_config = state::JwtConfig::new(&secret_key);
+
+    let app_state = state::AppState {
+        user_service,
+        jwt_config,
+    };
 
     let host = env::var("APIROUTE").expect("APIROUTE must be set");
 

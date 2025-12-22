@@ -1,5 +1,6 @@
 use crate::state::UserServiceState;
 use axum::{Json, extract::State, http::StatusCode};
+use axum_extra::extract::cookie::{Cookie, CookieJar};
 use serde::{Deserialize, Serialize};
 use userservice::{SignInCommand, UserService};
 use utoipa::ToSchema;
@@ -29,8 +30,9 @@ pub struct SignInResponse {
 )]
 pub async fn signin<T>(
     State(UserServiceState(service)): State<UserServiceState<T>>,
+    jar: CookieJar,
     Json(payload): Json<SignInRequest>,
-) -> Result<Json<SignInResponse>, StatusCode>
+) -> Result<(CookieJar, Json<SignInResponse>), StatusCode>
 where
     T: UserService,
 {
@@ -40,10 +42,29 @@ where
     };
 
     match service.signin(command).await {
-        Ok(dto) => Ok(Json(SignInResponse {
-            jwt: dto.jwt,
-            refresh_token: dto.refresh_token,
-        })),
+        Ok(dto) => {
+            let jwt_cookie = Cookie::build(("jwt", dto.jwt.clone()))
+                .path("/api")
+                .http_only(true)
+                .same_site(axum_extra::extract::cookie::SameSite::Lax)
+                .build();
+
+            let refresh_cookie = Cookie::build(("refresh_token", dto.refresh_token.clone()))
+                .path("/refresh")
+                .http_only(true)
+                .same_site(axum_extra::extract::cookie::SameSite::Lax)
+                .build();
+
+            let jar = jar.add(jwt_cookie).add(refresh_cookie);
+
+            Ok((
+                jar,
+                Json(SignInResponse {
+                    jwt: dto.jwt,
+                    refresh_token: dto.refresh_token,
+                }),
+            ))
+        }
         Err(_) => Err(StatusCode::UNAUTHORIZED),
     }
 }

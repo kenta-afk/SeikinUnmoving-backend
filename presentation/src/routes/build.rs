@@ -1,8 +1,10 @@
 use crate::state::AppState;
 use axum::{
     Router,
+    http::{Method, header},
     routing::{get, post},
 };
+use tower_http::cors::CorsLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -20,7 +22,6 @@ use utoipa_swagger_ui::SwaggerUi;
             crate::routes::user::SignUpResponse,
             crate::routes::user::SignInRequest,
             crate::routes::user::SignInResponse,
-            crate::routes::user::GetUserRequest,
             crate::routes::user::GetUserResponse,
         )
     ),
@@ -40,11 +41,22 @@ where
     let user_route = Router::new()
         .route("/user/signup", post(crate::routes::user::signup))
         .route("/user/signin", post(crate::routes::user::signin))
-        .route("/user", post(crate::routes::user::get_user));
+        .route("/api/user", post(crate::routes::user::get_user));
+
+    let cors = CorsLayer::new()
+        .allow_origin(
+            "http://localhost:3000"
+                .parse::<axum::http::HeaderValue>()
+                .unwrap(),
+        )
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers([header::CONTENT_TYPE, header::COOKIE])
+        .allow_credentials(true);
 
     Router::new()
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(health_route)
         .merge(user_route)
+        .layer(cors)
         .with_state(app_state)
 }
