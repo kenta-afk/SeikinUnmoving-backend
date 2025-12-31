@@ -34,6 +34,8 @@ where
 
     match service.refresh_token(command).await {
         Ok(dto) => {
+            tracing::info!("Refresh token successful for user: {:?}", user_id);
+
             let jwt_cookie = Cookie::build(("jwt", dto.jwt.clone()))
                 .path("/api")
                 .http_only(true)
@@ -41,7 +43,7 @@ where
                 .build();
 
             let refresh_cookie = Cookie::build(("refresh_token", dto.refresh_token.clone()))
-                .path("/")
+                .path("/refresh")
                 .http_only(true)
                 .same_site(axum_extra::extract::cookie::SameSite::Lax)
                 .build();

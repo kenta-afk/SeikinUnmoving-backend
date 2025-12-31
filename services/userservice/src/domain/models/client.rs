@@ -27,17 +27,14 @@ impl Client {
             created_at: chrono::Utc::now(),
         }
     }
-    pub fn update(
-        &mut self,
-        user_id: UserId,
-        jti: Uuid,
-        exp: i64,
-        uuid_service: &impl UuidService,
-    ) -> Self {
-        self.jti = jti;
-        self.exp = exp;
-
-        Client::new(user_id, jti, exp, uuid_service)
+    pub fn update(&mut self, user_id: UserId, jti: Uuid, exp: i64) -> Self {
+        Self {
+            id: self.id,
+            user_id,
+            jti,
+            exp,
+            created_at: self.created_at,
+        }
     }
     pub fn into_create(self) -> CreateClient {
         CreateClient {

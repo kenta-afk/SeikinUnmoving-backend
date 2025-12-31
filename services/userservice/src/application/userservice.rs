@@ -145,7 +145,6 @@ where
             user.id(),
             refresh_token_claims.jti,
             refresh_token_claims.exp,
-            &self.uuid_service,
         );
         self.client_repo.save(updated_client.into_save()).await?;
 
@@ -165,12 +164,33 @@ where
     async fn refresh_token(&self, command: RefreshCommand) -> Result<RefreshDto, ServiceError> {
         let client = match self.client_repo.get_by_user_id(command.user_id).await? {
             Some(client) => client,
-            None => return Err(ServiceError::ClientNotFound),
+            None => {
+                println!(
+                    "[DEBUG] Client not found for user_id: {:?}",
+                    command.user_id
+                );
+                return Err(ServiceError::ClientNotFound);
+            }
         };
+
+        println!(
+            "[DEBUG] Comparing JTIs - DB: {:?}, Request: {:?}, Exp: {}, Now: {}",
+            client.jti,
+            command.jti,
+            client.exp,
+            chrono::Utc::now().timestamp()
+        );
 
         if client.jti == command.jti && client.exp > chrono::Utc::now().timestamp() {
             self.client_repo.delete_by_user_id(command.user_id).await?;
         } else {
+            println!(
+                "[ERROR] JTI mismatch or expired - DB JTI: {:?}, Request JTI: {:?}, JTI match: {}, Expired: {}",
+                client.jti,
+                command.jti,
+                client.jti == command.jti,
+                client.exp <= chrono::Utc::now().timestamp()
+            );
             return Err(ServiceError::ClientNotFound);
         }
 

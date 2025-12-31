@@ -46,15 +46,7 @@ where
             &jwt_config.decoding_key,
             &jwt_config.validation,
         )
-        .map_err(|e| {
-            tracing::warn!("Refresh token decode error: {}", e);
-            StatusCode::UNAUTHORIZED
-        })?;
-
-        tracing::debug!(
-            "Refresh token extracted for user: {:?}",
-            token_data.claims.sub
-        );
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
         Ok(RefreshTokenExtractor {
             user_id: token_data.claims.sub,
