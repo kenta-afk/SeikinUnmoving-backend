@@ -45,6 +45,7 @@ dependencies = [
  "async-trait",
  "axum",
  "axum-extra",
+ "chrono",
  "console_error_panic_hook",
  "dotenv",
  "gameservice",
@@ -60,6 +61,7 @@ dependencies = [
  "userservice",
  "utoipa",
  "utoipa-swagger-ui",
+ "uuid",
  "worker",
 ]
 

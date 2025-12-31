@@ -17,6 +17,8 @@ axum-extra = { version = "0.12.3", features = ["cookie"] }
 tower-http = { version = "0.6.8", features = ["cors"] }
 async-trait = "0.1.89"
 jsonwebtoken = "10.2.0"
+uuid = { version = "1.18.1", features = ["serde", "v7"] }
+chrono = "0.4.42"
 
 # 開発環境用（Dockerなど）
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

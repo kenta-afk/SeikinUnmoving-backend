@@ -56,7 +56,7 @@ impl ClientRepository for ClientRepositoryImpl {
                 id as "id: ClientId", 
                 user_id as "user_id: UserId", 
                 jti as "jti: Uuid", 
-                exp as "exp: DateTime<Utc>", 
+                exp as "exp: i64", 
                 created_at as "created_at: DateTime<Utc>"
             FROM clients
             WHERE user_id = ?1
@@ -78,6 +78,19 @@ impl ClientRepository for ClientRepositoryImpl {
             client.jti,
             client.exp,
             client.id,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+    async fn delete_by_user_id(&self, user_id: UserId) -> Result<(), DbError> {
+        sqlx::query!(
+            r#"
+            DELETE FROM clients
+            WHERE user_id = ?1
+            "#,
+            user_id,
         )
         .execute(&self.pool)
         .await?;

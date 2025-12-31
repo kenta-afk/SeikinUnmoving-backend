@@ -9,6 +9,7 @@ pub trait ClientRepository: Send + Sync + Clone + 'static {
     async fn create(&self, client: CreateClient) -> Result<(), DbError>;
     async fn get_by_user_id(&self, user_id: UserId) -> Result<Option<Client>, DbError>;
     async fn save(&self, client: SaveClient) -> Result<(), DbError>;
+    async fn delete_by_user_id(&self, user_id: UserId) -> Result<(), DbError>;
 }
 
 #[cfg(test)]

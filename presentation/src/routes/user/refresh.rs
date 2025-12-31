@@ -1,46 +1,38 @@
-use crate::state::UserServiceState;
+use crate::{extractors::RefreshTokenExtractor, state::UserServiceState};
 use axum::{Json, extract::State, http::StatusCode};
 use axum_extra::extract::cookie::{Cookie, CookieJar};
-use serde::{Deserialize, Serialize};
-use userservice::{SignInCommand, UserService};
+use serde::Serialize;
+use userservice::{RefreshCommand, UserService};
 use utoipa::ToSchema;
 
-#[derive(Deserialize, ToSchema)]
-pub struct SignInRequest {
-    pub email: String,
-    pub password: String,
-}
-
 #[derive(Serialize, ToSchema)]
-pub struct SignInResponse {
-    pub jwt: String,
-    pub refresh_token: String,
+pub struct RefreshResponse {
+    pub user_id: String,
+    pub email: String,
+    pub name: String,
+    pub seikin_similarity: f64,
 }
 
 #[utoipa::path(
     post,
-    path = "/user/signin",
+    path = "/refresh",
     tag = "user",
-    request_body = SignInRequest,
     responses(
-        (status = 200, description = "User successfully signed in", body = SignInResponse),
+        (status = 200, description = "User token successfully refreshed", body = RefreshResponse),
         (status = 401, description = "Unauthorized")
     )
 )]
-pub async fn signin<T>(
+pub async fn refresh<T>(
     State(UserServiceState(service)): State<UserServiceState<T>>,
+    RefreshTokenExtractor { user_id, jti }: RefreshTokenExtractor,
     jar: CookieJar,
-    Json(payload): Json<SignInRequest>,
-) -> Result<(CookieJar, Json<SignInResponse>), StatusCode>
+) -> Result<(CookieJar, Json<RefreshResponse>), StatusCode>
 where
     T: UserService,
 {
-    let command = SignInCommand {
-        email: payload.email,
-        password: payload.password,
-    };
+    let command = RefreshCommand { user_id, jti };
 
-    match service.signin(command).await {
+    match service.refresh_token(command).await {
         Ok(dto) => {
             let jwt_cookie = Cookie::build(("jwt", dto.jwt.clone()))
                 .path("/api")
@@ -49,7 +41,7 @@ where
                 .build();
 
             let refresh_cookie = Cookie::build(("refresh_token", dto.refresh_token.clone()))
-                .path("/refresh")
+                .path("/")
                 .http_only(true)
                 .same_site(axum_extra::extract::cookie::SameSite::Lax)
                 .build();
@@ -58,9 +50,11 @@ where
 
             Ok((
                 jar,
-                Json(SignInResponse {
-                    jwt: dto.jwt,
-                    refresh_token: dto.refresh_token,
+                Json(RefreshResponse {
+                    user_id: dto.user_id.to_string(),
+                    email: dto.email,
+                    name: dto.name,
+                    seikin_similarity: dto.seikin_similarity,
                 }),
             ))
         }

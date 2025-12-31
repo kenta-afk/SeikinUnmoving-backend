@@ -13,17 +13,12 @@ pub struct Client {
     pub id: ClientId,
     pub user_id: UserId,
     pub jti: Uuid,
-    pub exp: DateTime<Utc>,
+    pub exp: i64,
     pub created_at: DateTime<Utc>,
 }
 
 impl Client {
-    pub fn new(
-        user_id: UserId,
-        jti: Uuid,
-        exp: DateTime<Utc>,
-        uuid_service: &impl UuidService,
-    ) -> Self {
+    pub fn new(user_id: UserId, jti: Uuid, exp: i64, uuid_service: &impl UuidService) -> Self {
         Self {
             id: ClientId::new(uuid_service),
             user_id,
@@ -36,7 +31,7 @@ impl Client {
         &mut self,
         user_id: UserId,
         jti: Uuid,
-        exp: DateTime<Utc>,
+        exp: i64,
         uuid_service: &impl UuidService,
     ) -> Self {
         self.jti = jti;

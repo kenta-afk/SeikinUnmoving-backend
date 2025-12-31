@@ -1,8 +1,11 @@
 use crate::{
     ServiceError,
     application::{
-        command::{GetUserCommand, SignInCommand, SignUpCommand},
-        dto::{GetUserDto, SignInDto, SignUpDto},
+        command::{
+            get_user::GetUserCommand, refresh::RefreshCommand, signin::SignInCommand,
+            signup::SignUpCommand,
+        },
+        dto::{get_user::GetUserDto, refresh::RefreshDto, signin::SignInDto, signup::SignUpDto},
         ports::{
             constant::{JWT_EXPIRATION_SECONDS, REFRESH_TOKEN_EXPIRATION_DAYS},
             secret_service::SecretService,
@@ -22,6 +25,7 @@ pub trait UserService: Send + Sync + 'static {
     async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError>;
     async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError>;
     async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError>;
+    async fn refresh_token(&self, command: RefreshCommand) -> Result<RefreshDto, ServiceError>;
 }
 
 pub struct UserServiceImpl<UR, CR, IP, SS>
@@ -156,5 +160,54 @@ where
             .ok_or(ServiceError::UserNotFound)?;
 
         Ok(user.into_get())
+    }
+
+    async fn refresh_token(&self, command: RefreshCommand) -> Result<RefreshDto, ServiceError> {
+        let client = match self.client_repo.get_by_user_id(command.user_id).await? {
+            Some(client) => client,
+            None => return Err(ServiceError::ClientNotFound),
+        };
+
+        if client.jti == command.jti && client.exp > chrono::Utc::now().timestamp() {
+            self.client_repo.delete_by_user_id(command.user_id).await?;
+        } else {
+            return Err(ServiceError::ClientNotFound);
+        }
+
+        let user = self
+            .user_repo
+            .get_by_id(command.user_id)
+            .await?
+            .ok_or(ServiceError::UserNotFound)?
+            .into_get();
+
+        let jwt_claims = JwtClaims::new(command.user_id, JWT_EXPIRATION_SECONDS);
+        let refresh_token_claims = RefreshClaims::new(
+            command.user_id,
+            &self.uuid_service,
+            REFRESH_TOKEN_EXPIRATION_DAYS,
+        );
+
+        let jwt = self.secret_service.create_jwt(&jwt_claims)?;
+        let refresh_token = self
+            .secret_service
+            .create_refresh_token(&refresh_token_claims)?;
+        let client = Client::new(
+            command.user_id,
+            refresh_token_claims.jti,
+            refresh_token_claims.exp,
+            &self.uuid_service,
+        );
+
+        self.client_repo.save(client.into_save()).await?;
+
+        Ok(RefreshDto {
+            user_id: command.user_id,
+            email: user.email,
+            name: user.name,
+            seikin_similarity: user.seikin_similarity,
+            jwt,
+            refresh_token,
+        })
     }
 }

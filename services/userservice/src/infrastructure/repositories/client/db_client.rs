@@ -6,6 +6,6 @@ pub struct DbClient {
     pub id: ClientId,
     pub user_id: UserId,
     pub jti: Uuid,
-    pub exp: DateTime<Utc>,
+    pub exp: i64,
     pub created_at: DateTime<Utc>,
 }
