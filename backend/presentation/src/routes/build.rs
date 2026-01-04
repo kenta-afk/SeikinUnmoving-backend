@@ -16,6 +16,7 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::routes::user::signin,
         crate::routes::user::get_user,
         crate::routes::user::refresh,
+        crate::routes::user::logout,
     ),
     components(
         schemas(
@@ -25,6 +26,7 @@ use utoipa_swagger_ui::SwaggerUi;
             crate::routes::user::SignInResponse,
             crate::routes::user::GetUserResponse,
             crate::routes::user::RefreshResponse,
+            crate::routes::user::LogoutResponse,
         )
     ),
     tags(
@@ -43,6 +45,7 @@ where
     let user_route = Router::new()
         .route("/user/signup", post(crate::routes::user::signup))
         .route("/user/signin", post(crate::routes::user::signin))
+        .route("/user/logout", post(crate::routes::user::logout))
         .route("/refresh", post(crate::routes::user::refresh))
         .route("/api/user", post(crate::routes::user::get_user));
 

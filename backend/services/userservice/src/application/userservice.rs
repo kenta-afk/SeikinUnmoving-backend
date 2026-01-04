@@ -2,10 +2,13 @@ use crate::{
     ServiceError,
     application::{
         command::{
-            get_user::GetUserCommand, refresh::RefreshCommand, signin::SignInCommand,
-            signup::SignUpCommand,
+            get_user::GetUserCommand, logout::LogoutCommand, refresh::RefreshCommand,
+            signin::SignInCommand, signup::SignUpCommand,
         },
-        dto::{get_user::GetUserDto, refresh::RefreshDto, signin::SignInDto, signup::SignUpDto},
+        dto::{
+            get_user::GetUserDto, logout::LogoutDto, refresh::RefreshDto, signin::SignInDto,
+            signup::SignUpDto,
+        },
         ports::{
             constant::{JWT_EXPIRATION_SECONDS, REFRESH_TOKEN_EXPIRATION_DAYS},
             secret_service::SecretService,
@@ -26,6 +29,7 @@ pub trait UserService: Send + Sync + 'static {
     async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError>;
     async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError>;
     async fn refresh_token(&self, command: RefreshCommand) -> Result<RefreshDto, ServiceError>;
+    async fn logout(&self, command: LogoutCommand) -> Result<LogoutDto, ServiceError>;
 }
 
 pub struct UserServiceImpl<UR, CR, IP, SS>
@@ -229,5 +233,13 @@ where
             jwt,
             refresh_token,
         })
+    }
+
+    async fn logout(&self, command: LogoutCommand) -> Result<LogoutDto, ServiceError> {
+        self.client_repo
+            .delete_by_user_id(command.user_id)
+            .await?;
+
+        Ok(LogoutDto)
     }
 }

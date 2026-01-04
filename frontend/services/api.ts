@@ -131,8 +131,15 @@ export const getUser = async (): Promise<GetUserResponse> => {
 
 // ログアウト
 export const logout = async (): Promise<void> => {
-  await AsyncStorage.removeItem('jwt');
-  await AsyncStorage.removeItem('refresh_token');
+  try {
+    await api.post('/user/logout');
+  } catch (error) {
+    console.error('Logout API error:', error);
+    // APIエラーでもローカルのトークンは削除する
+  } finally {
+    await AsyncStorage.removeItem('jwt');
+    await AsyncStorage.removeItem('refresh_token');
+  }
 };
 
 // トークンリフレッシュ

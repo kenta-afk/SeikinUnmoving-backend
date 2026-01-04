@@ -16,10 +16,13 @@ mod infrastructure;
 
 pub use application::{
     command::{
-        get_user::GetUserCommand, refresh::RefreshCommand, signin::SignInCommand,
-        signup::SignUpCommand,
+        get_user::GetUserCommand, logout::LogoutCommand, refresh::RefreshCommand,
+        signin::SignInCommand, signup::SignUpCommand,
     },
-    dto::{get_user::GetUserDto, refresh::RefreshDto, signin::SignInDto, signup::SignUpDto},
+    dto::{
+        get_user::GetUserDto, logout::LogoutDto, refresh::RefreshDto, signin::SignInDto,
+        signup::SignUpDto,
+    },
     ports::{secret_service::SecretService, uuid_service::UuidService},
     userservice::{UserService, UserServiceImpl},
 };
