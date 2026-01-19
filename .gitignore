@@ -1,5 +1,6 @@
 /target
 .DS_Store
+.env
 
 # Node.js
 node_modules/
