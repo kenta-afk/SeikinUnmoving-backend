@@ -54,5 +54,5 @@ pub async fn refresh(mut req: Request, ctx: RouteContext<()>) -> Result<Response
 }
 
 pub fn register(router: Router<'_, ()>) -> Router<'_, ()> {
-    router.post_async("/api/refresh", refresh)
+    router.post_async("/user/refresh", refresh)
 }
