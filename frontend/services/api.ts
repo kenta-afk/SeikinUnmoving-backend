@@ -50,7 +50,7 @@ api.interceptors.response.use(
         const refreshToken = await AsyncStorage.getItem('refresh_token');
         if (refreshToken) {
           const response = await axios.post<RefreshResponse>(
-            `${API_BASE_URL}/refresh`,
+            `${API_BASE_URL}/user/refresh`,
             {},
             {
               withCredentials: true,
@@ -126,7 +126,7 @@ export const signin = async (
 
 // ユーザー情報取得
 export const getUser = async (): Promise<GetUserResponse> => {
-  const response = await api.post<GetUserResponse>('/api/user');
+  const response = await api.get<GetUserResponse>('/user/me');
   return response.data;
 };
 
@@ -145,7 +145,7 @@ export const logout = async (): Promise<void> => {
 
 // トークンリフレッシュ
 export const refreshToken = async (): Promise<RefreshResponse> => {
-  const response = await api.post<RefreshResponse>('/refresh');
+  const response = await api.post<RefreshResponse>('/user/refresh');
   const { jwt, refresh_token } = response.data;
   await AsyncStorage.setItem('jwt', jwt);
   await AsyncStorage.setItem('refresh_token', refresh_token);

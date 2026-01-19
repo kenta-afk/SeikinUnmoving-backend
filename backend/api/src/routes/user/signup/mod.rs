@@ -46,5 +46,5 @@ pub async fn signup(mut req: Request, ctx: RouteContext<()>) -> Result<Response>
 }
 
 pub fn register(router: Router<'_, ()>) -> Router<'_, ()> {
-    router.post_async("/api/signup", signup)
+    router.post_async("/user/signup", signup)
 }
