@@ -8,7 +8,9 @@ use crate::{
     },
 };
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Client {
     pub id: ClientId,
     pub user_id: UserId,

@@ -2,80 +2,60 @@ use crate::{
     application::ports::secret_service::SecretService,
     domain::models::{jwt::JwtClaims, refresh_token::RefreshClaims},
 };
-use argon2::{
-    Argon2, PasswordHasher, PasswordVerifier,
-    password_hash::phc::PasswordHash,
-};
-use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, encode};
-use rand::RngCore;
+use bcrypt::{hash, verify, DEFAULT_COST};
+use jwt_simple::prelude::*;
+use getrandom::getrandom;
 
 #[derive(Clone)]
 pub struct SecretServiceImpl {
-    encoding_key: EncodingKey,
-    decoding_key: DecodingKey,
+    key: HS256Key,
 }
 
 impl SecretServiceImpl {
     #[allow(dead_code)]
     pub fn new(secret: &str) -> Self {
         Self {
-            encoding_key: EncodingKey::from_secret(secret.as_bytes()),
-            decoding_key: DecodingKey::from_secret(secret.as_bytes()),
+            key: HS256Key::from_bytes(secret.as_bytes()),
         }
     }
 }
 
 impl SecretService for SecretServiceImpl {
     fn create_secret(&self) -> String {
-        let mut rng = rand::rng();
         let mut bytes = [0u8; 32];
-        rng.fill_bytes(&mut bytes);
+        getrandom(&mut bytes).expect("failed to generate random bytes");
         hex::encode(bytes)
     }
     fn hash_password(&self, password: &str) -> String {
-        let argon2 = Argon2::default();
-
-        argon2
-            .hash_password(password.as_bytes())
-            .expect("failed to hash password")
-            .to_string()
+        hash(password, DEFAULT_COST).expect("failed to hash password")
     }
     fn verify_password(&self, hashed: &str, password: &str) -> bool {
-        let parsed_hash = PasswordHash::new(hashed).ok();
-
-        match parsed_hash {
-            Some(hash) => Argon2::default()
-                .verify_password(password.as_bytes(), &hash)
-                .is_ok(),
-            None => false,
-        }
+        verify(password, hashed).unwrap_or(false)
     }
-    fn create_jwt(&self, claims: &JwtClaims) -> Result<String, jsonwebtoken::errors::Error> {
-        encode(&Header::default(), &claims, &self.encoding_key)
+    fn create_jwt(&self, claims: &JwtClaims) -> Result<String, String> {
+        let jwt_claims = Claims::with_custom_claims(
+            claims.clone(),
+            Duration::from_secs((claims.exp - claims.iat) as u64),
+        );
+        self.key.authenticate(jwt_claims).map_err(|e| e.to_string())
     }
-    fn decode_jwt(&self, token: &str) -> Result<JwtClaims, jsonwebtoken::errors::Error> {
-        let token_data = jsonwebtoken::decode::<JwtClaims>(
-            token,
-            &self.decoding_key,
-            &jsonwebtoken::Validation::new(Algorithm::HS256),
-        )?;
-        Ok(token_data.claims)
+    fn decode_jwt(&self, token: &str) -> Result<JwtClaims, String> {
+        let claims = self.key
+            .verify_token::<JwtClaims>(token, None)
+            .map_err(|e| e.to_string())?;
+        Ok(claims.custom)
     }
-    fn create_refresh_token(
-        &self,
-        claims: &RefreshClaims,
-    ) -> Result<String, jsonwebtoken::errors::Error> {
-        encode(&Header::default(), claims, &self.encoding_key)
+    fn create_refresh_token(&self, claims: &RefreshClaims) -> Result<String, String> {
+        let jwt_claims = Claims::with_custom_claims(
+            claims.clone(),
+            Duration::from_secs((claims.exp - claims.iat) as u64),
+        );
+        self.key.authenticate(jwt_claims).map_err(|e| e.to_string())
     }
-    fn decode_refresh_token(
-        &self,
-        refresh_token: &str,
-    ) -> Result<RefreshClaims, jsonwebtoken::errors::Error> {
-        let token_data = jsonwebtoken::decode::<RefreshClaims>(
-            refresh_token,
-            &self.decoding_key,
-            &jsonwebtoken::Validation::new(Algorithm::HS256),
-        )?;
-        Ok(token_data.claims)
+    fn decode_refresh_token(&self, refresh_token: &str) -> Result<RefreshClaims, String> {
+        let claims = self.key
+            .verify_token::<RefreshClaims>(refresh_token, None)
+            .map_err(|e| e.to_string())?;
+        Ok(claims.custom)
     }
 }

@@ -1,7 +1,7 @@
 use crate::domain::models::id::UserId;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JwtClaims {
     pub sub: UserId,
     pub exp: usize,

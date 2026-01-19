@@ -1,4 +1,10 @@
 mod routes;
+mod repositories;
+
+pub use repositories::{
+    client_repository_d1::ClientRepositoryD1,
+    user_repository_d1::UserRepositoryD1,
+};
 
 use worker::*;
 

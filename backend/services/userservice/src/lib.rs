@@ -1,5 +1,4 @@
 use crate::{
-    domain::models::error::DbError,
     infrastructure::{
         adapters::{secret_service::SecretServiceImpl, uuid_service::UuidServiceImpl},
         repositories::{
@@ -7,12 +6,11 @@ use crate::{
         },
     },
 };
-use sqlx::{Pool, Sqlite};
 use thiserror::Error;
 
 mod application;
 mod domain;
-mod infrastructure;
+pub mod infrastructure;
 
 pub use application::{
     command::{
@@ -27,9 +25,22 @@ pub use application::{
     userservice::{UserService, UserServiceImpl},
 };
 pub use domain::{
-    models::id::UserId,
+    models::{
+        client::Client,
+        error::DbError,
+        id::{ClientId, UserId},
+        user::User,
+    },
     repositories::{
-        client::client_repository::ClientRepository, user::user_repository::UserRepository,
+        client::{
+            client_repository::ClientRepository, 
+            create_client::CreateClient,
+            save_client::SaveClient,
+        },
+        user::{
+            create_user::CreateUser,
+            user_repository::UserRepository,
+        },
     },
 };
 
@@ -38,7 +49,7 @@ pub enum ServiceError {
     #[error("Database error: {0}")]
     Database(#[from] DbError),
     #[error("JWT error: {0}")]
-    Jwt(#[from] jsonwebtoken::errors::Error),
+    Jwt(String),
     #[error("password verification failed")]
     PasswordVerificationFailed,
     #[error("user not found")]
@@ -47,19 +58,14 @@ pub enum ServiceError {
     ClientNotFound,
 }
 
+impl From<String> for ServiceError {
+    fn from(s: String) -> Self {
+        ServiceError::Jwt(s)
+    }
+}
+
 pub type ConcreteUserService =
     UserServiceImpl<UserRepositoryImpl, ClientRepositoryImpl, UuidServiceImpl, SecretServiceImpl>;
 
-pub async fn build_service(
-    db_url: &str,
-    secret_key: &str,
-) -> Result<ConcreteUserService, Box<dyn std::error::Error + Send + Sync>> {
-    let pool = Pool::<Sqlite>::connect(db_url).await?;
-
-    Ok(UserServiceImpl::new(
-        UserRepositoryImpl::new(pool.clone()),
-        ClientRepositoryImpl::new(pool),
-        UuidServiceImpl,
-        SecretServiceImpl::new(secret_key),
-    ))
-}
+// WASM環境では、データベース接続は外部で管理される
+// build_service関数は削除し、直接インスタンスを作成する

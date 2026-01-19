@@ -5,8 +5,9 @@ use crate::{
     infrastructure::repositories::user::db_user::DbUser,
 };
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
-#[derive(sqlx::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     id: UserId,
     name: String,

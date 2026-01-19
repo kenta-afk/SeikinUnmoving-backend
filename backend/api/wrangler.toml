@@ -21,10 +21,12 @@ LOG_LEVEL = "INFO"
 # ========================================
 
 # D1データベース（SQLite互換）
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "seikin-db"
-# database_id = "your-database-id"  # wrangler d1 create seikin-db で取得
+# 開発環境用：ローカルSQLiteファイルを使用
+[[d1_databases]]
+binding = "DB"
+database_name = "seikin-db"
+database_id = "7024845a-2b00-4cb5-a0a3-87fc7dead454"
+preview_database_id = "DB"  # 開発時はプレビューDBを使用
 
 # KVストア（Redis/Valkey代替）
 # [[kv_namespaces]]

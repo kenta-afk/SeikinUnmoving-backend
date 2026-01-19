@@ -2,7 +2,7 @@ use crate::{application::ports::uuid_service::UuidService, domain::models::id::U
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefreshClaims {
     pub sub: UserId,
     pub exp: i64,

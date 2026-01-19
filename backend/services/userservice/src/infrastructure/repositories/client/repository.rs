@@ -1,100 +1,46 @@
-use sqlx::SqlitePool;
-
 use crate::{
     domain::{
         models::{
             client::Client,
             error::DbError,
-            id::{ClientId, UserId},
+            id::UserId,
         },
         repositories::client::{
             client_repository::ClientRepository, create_client::CreateClient,
             save_client::SaveClient,
         },
     },
-    infrastructure::repositories::client::db_client::DbClient,
 };
-use chrono::{DateTime, Utc};
-use uuid::Uuid;
 
 #[derive(Clone)]
 pub struct ClientRepositoryImpl {
-    pub pool: SqlitePool,
+    // WASM環境では、実際のDB接続の代わりにモックや外部APIを使用
 }
 
 #[allow(dead_code)]
 impl ClientRepositoryImpl {
-    pub fn new(pool: SqlitePool) -> Self {
-        Self { pool }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
-#[async_trait::async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 impl ClientRepository for ClientRepositoryImpl {
-    async fn create(&self, client: CreateClient) -> Result<(), DbError> {
-        sqlx::query!(
-            r#"
-            INSERT INTO clients (id, user_id, jti, exp, created_at)
-            VALUES (?1, ?2, ?3, ?4, ?5)
-            "#,
-            client.id,
-            client.user_id,
-            client.jti,
-            client.exp,
-            client.created_at,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
+    async fn create(&self, _client: CreateClient) -> Result<(), DbError> {
+        // WASM環境では、Cloudflare Workers D1 APIを使用する実装に置き換える
+        Err(DbError::Generic("Not implemented for WASM".to_string()))
     }
-    async fn get_by_user_id(&self, user_id: UserId) -> Result<Option<Client>, DbError> {
-        let record = sqlx::query_as!(
-            DbClient,
-            r#"
-            SELECT 
-                id as "id: ClientId", 
-                user_id as "user_id: UserId", 
-                jti as "jti: Uuid", 
-                exp as "exp: i64", 
-                created_at as "created_at: DateTime<Utc>"
-            FROM clients
-            WHERE user_id = ?1
-            "#,
-            user_id,
-        )
-        .fetch_optional(&self.pool)
-        .await?;
-
-        Ok(record.map(Into::into))
+    async fn get_by_user_id(&self, _user_id: UserId) -> Result<Option<Client>, DbError> {
+        // WASM環境では、Cloudflare Workers D1 APIを使用する実装に置き換える
+        Err(DbError::Generic("Not implemented for WASM".to_string()))
     }
-    async fn save(&self, client: SaveClient) -> Result<(), DbError> {
-        sqlx::query!(
-            r#"
-            UPDATE clients
-            SET jti = ?1, exp = ?2
-            WHERE id = ?3
-            "#,
-            client.jti,
-            client.exp,
-            client.id,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
+    async fn save(&self, _client: SaveClient) -> Result<(), DbError> {
+        // WASM環境では、Cloudflare Workers D1 APIを使用する実装に置き換える
+        Err(DbError::Generic("Not implemented for WASM".to_string()))
     }
-    async fn delete_by_user_id(&self, user_id: UserId) -> Result<(), DbError> {
-        sqlx::query!(
-            r#"
-            DELETE FROM clients
-            WHERE user_id = ?1
-            "#,
-            user_id,
-        )
-        .execute(&self.pool)
-        .await?;
-
-        Ok(())
+    async fn delete_by_user_id(&self, _user_id: UserId) -> Result<(), DbError> {
+        // WASM環境では、Cloudflare Workers D1 APIを使用する実装に置き換える
+        Err(DbError::Generic("Not implemented for WASM".to_string()))
     }
 }
