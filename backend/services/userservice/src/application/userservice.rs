@@ -238,9 +238,7 @@ where
     }
 
     async fn logout(&self, command: LogoutCommand) -> Result<LogoutDto, ServiceError> {
-        self.client_repo
-            .delete_by_user_id(command.user_id)
-            .await?;
+        self.client_repo.delete_by_user_id(command.user_id).await?;
 
         Ok(LogoutDto)
     }

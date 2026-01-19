@@ -1,9 +1,7 @@
-use crate::{
-    infrastructure::{
-        adapters::{secret_service::SecretServiceImpl, uuid_service::UuidServiceImpl},
-        repositories::{
-            client::repository::ClientRepositoryImpl, user::repository::UserRepositoryImpl,
-        },
+use crate::infrastructure::{
+    adapters::{secret_service::SecretServiceImpl, uuid_service::UuidServiceImpl},
+    repositories::{
+        client::repository::ClientRepositoryImpl, user::repository::UserRepositoryImpl,
     },
 };
 use thiserror::Error;
@@ -33,14 +31,10 @@ pub use domain::{
     },
     repositories::{
         client::{
-            client_repository::ClientRepository, 
-            create_client::CreateClient,
+            client_repository::ClientRepository, create_client::CreateClient,
             save_client::SaveClient,
         },
-        user::{
-            create_user::CreateUser,
-            user_repository::UserRepository,
-        },
+        user::{create_user::CreateUser, user_repository::UserRepository},
     },
 };
 

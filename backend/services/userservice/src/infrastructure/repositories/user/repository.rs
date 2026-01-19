@@ -1,8 +1,6 @@
-use crate::{
-    domain::{
-        models::{error::DbError, id::UserId, user::User},
-        repositories::user::{create_user::CreateUser, user_repository::UserRepository},
-    },
+use crate::domain::{
+    models::{error::DbError, id::UserId, user::User},
+    repositories::user::{create_user::CreateUser, user_repository::UserRepository},
 };
 
 #[derive(Clone)]

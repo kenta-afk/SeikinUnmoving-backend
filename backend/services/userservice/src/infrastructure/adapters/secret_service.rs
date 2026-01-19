@@ -2,9 +2,9 @@ use crate::{
     application::ports::secret_service::SecretService,
     domain::models::{jwt::JwtClaims, refresh_token::RefreshClaims},
 };
-use bcrypt::{hash, verify, DEFAULT_COST};
-use jwt_simple::prelude::*;
+use bcrypt::{DEFAULT_COST, hash, verify};
 use getrandom::getrandom;
+use jwt_simple::prelude::*;
 
 #[derive(Clone)]
 pub struct SecretServiceImpl {
@@ -40,7 +40,8 @@ impl SecretService for SecretServiceImpl {
         self.key.authenticate(jwt_claims).map_err(|e| e.to_string())
     }
     fn decode_jwt(&self, token: &str) -> Result<JwtClaims, String> {
-        let claims = self.key
+        let claims = self
+            .key
             .verify_token::<JwtClaims>(token, None)
             .map_err(|e| e.to_string())?;
         Ok(claims.custom)
@@ -53,7 +54,8 @@ impl SecretService for SecretServiceImpl {
         self.key.authenticate(jwt_claims).map_err(|e| e.to_string())
     }
     fn decode_refresh_token(&self, refresh_token: &str) -> Result<RefreshClaims, String> {
-        let claims = self.key
+        let claims = self
+            .key
             .verify_token::<RefreshClaims>(refresh_token, None)
             .map_err(|e| e.to_string())?;
         Ok(claims.custom)
