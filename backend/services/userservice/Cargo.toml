@@ -1,0 +1,26 @@
+[package]
+name = "userservice"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# WASM互換のパスワードハッシュ - argon2の代わりにbcrypt
+bcrypt = "0.15"
+async-trait = "0.1.89"
+chrono = { version = "0.4.42", features = ["serde", "wasmbind"] }
+hex = "0.4.3"
+# JWT - WASM互換のjwt-simpleを使用
+jwt-simple = "0.12"
+# getrandomをWASM対応に
+getrandom = { version = "0.2", features = ["js"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10.9"
+thiserror = "2.0.17"
+uuid = { version = "1.18.1", features = ["v7", "serde", "js"] }
+# データベース機能は別途Cloudflare Workers D1 APIで実装するため削除
+# sqlx と tokio を削除
+
+[dev-dependencies]
+mockall = "0.13.1"
+rstest = "0.26.1"
