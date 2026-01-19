@@ -61,5 +61,21 @@ impl From<String> for ServiceError {
 pub type ConcreteUserService =
     UserServiceImpl<UserRepositoryImpl, ClientRepositoryImpl, UuidServiceImpl, SecretServiceImpl>;
 
-// WASM環境では、データベース接続は外部で管理される
-// build_service関数は削除し、直接インスタンスを作成する
+// 開発環境用のビルド関数
+#[cfg(not(target_arch = "wasm32"))]
+pub async fn build_service(
+    _database_url: &str,
+    secret_key: &str,
+) -> Result<ConcreteUserService, ServiceError> {
+    let user_repo = UserRepositoryImpl::default();
+    let client_repo = ClientRepositoryImpl::default();
+    let uuid_service = UuidServiceImpl;
+    let secret_service = SecretServiceImpl::new(secret_key);
+
+    Ok(UserServiceImpl::new(
+        user_repo,
+        client_repo,
+        uuid_service,
+        secret_service,
+    ))
+}

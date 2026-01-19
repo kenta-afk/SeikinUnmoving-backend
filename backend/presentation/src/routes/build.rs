@@ -38,7 +38,7 @@ struct ApiDoc;
 
 pub fn build_router<US>(app_state: AppState<US>) -> Router
 where
-    US: userservice::UserService + Clone,
+    US: userservice::UserService + Clone + Send + Sync,
 {
     let health_route = Router::new().route("/health", get(crate::routes::check::health::health));
 

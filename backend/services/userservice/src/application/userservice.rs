@@ -25,7 +25,7 @@ use crate::{
 
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-pub trait UserService: 'static {
+pub trait UserService: Send + Sync + 'static {
     async fn signup(&self, command: SignUpCommand) -> Result<SignUpDto, ServiceError>;
     async fn signin(&self, command: SignInCommand) -> Result<SignInDto, ServiceError>;
     async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError>;
