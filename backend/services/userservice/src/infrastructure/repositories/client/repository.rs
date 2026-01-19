@@ -5,7 +5,7 @@ use crate::domain::{
     },
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ClientRepositoryImpl {
     // WASM環境では、実際のDB接続の代わりにモックや外部APIを使用
 }

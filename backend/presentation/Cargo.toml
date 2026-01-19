@@ -16,7 +16,7 @@ utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 axum-extra = { version = "0.12.3", features = ["cookie"] }
 tower-http = { version = "0.6.8", features = ["cors"] }
 async-trait = "0.1.89"
-jsonwebtoken = "10.2.0"
+jsonwebtoken = { version = "10.2.0", default-features = false, features = ["rust_crypto"] }
 uuid = { version = "1.18.1", features = ["serde", "v7"] }
 chrono = "0.4.42"
 

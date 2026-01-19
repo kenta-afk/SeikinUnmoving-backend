@@ -3,7 +3,7 @@ use crate::domain::{
     repositories::user::{create_user::CreateUser, user_repository::UserRepository},
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct UserRepositoryImpl {
     // WASM環境では、実際のDB接続の代わりにモックや外部APIを使用
     // pool: SqlitePool を削除
