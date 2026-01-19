@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fc358404-3978-41ad-89b7-7a1ba6a3026f"
+      }
+    },
+    "owner": "kenta-afk"
   }
 }
