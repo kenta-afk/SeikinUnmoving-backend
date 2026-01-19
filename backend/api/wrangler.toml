@@ -28,6 +28,12 @@ database_name = "seikin-db"
 database_id = "7024845a-2b00-4cb5-a0a3-87fc7dead454"
 preview_database_id = "DB"  # 開発時はプレビューDBを使用
 
+# 本番環境のD1設定
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "seikin-db"
+database_id = "7024845a-2b00-4cb5-a0a3-87fc7dead454"
+
 # KVストア（Redis/Valkey代替）
 # [[kv_namespaces]]
 # binding = "KV"

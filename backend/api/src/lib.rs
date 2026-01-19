@@ -15,5 +15,14 @@ async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let router = Router::new();
     let router = routes::register_routes(router);
 
-    router.run(req, env).await
+    // CORSヘッダーを追加
+    let mut response = router.run(req, env).await?;
+    
+    let headers = response.headers_mut();
+    headers.set("Access-Control-Allow-Origin", "*")?;
+    headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")?;
+    headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")?;
+    headers.set("Access-Control-Max-Age", "86400")?;
+    
+    Ok(response)
 }
