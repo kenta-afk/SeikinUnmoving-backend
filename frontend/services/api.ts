@@ -10,7 +10,8 @@ import type {
   RefreshResponse,
 } from '../types';
 
-const API_BASE_URL = 'http://localhost:8080';
+// 環境変数からAPI URLを取得（デフォルトはローカル開発環境）
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

@@ -39,6 +39,8 @@ jobs:
 
       - name: Build Web
         run: npx expo export -p web
+        env:
+          EXPO_PUBLIC_API_URL: ${{ secrets.API_URL }}
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy dist --project-name=seikin-frontend
