@@ -97,15 +97,25 @@ export const signup = async (
   email: string,
   password: string
 ): Promise<SignUpResponse & { userId?: string }> => {
+  console.log('API call: signup', { name, email, baseURL: API_BASE_URL });
   const requestData: SignUpRequest = { name, email, password };
-  const response = await api.post<SignUpResponse>('/user/signup', requestData);
+  
+  try {
+    const response = await api.post<SignUpResponse>('/user/signup', requestData);
+    console.log('Signup API response:', response.data);
 
-  const { jwt, refresh_token } = response.data;
-  await AsyncStorage.setItem('jwt', jwt);
-  await AsyncStorage.setItem('refresh_token', refresh_token);
+    const { jwt, refresh_token } = response.data;
+    await AsyncStorage.setItem('jwt', jwt);
+    await AsyncStorage.setItem('refresh_token', refresh_token);
 
-  const userId = getUserIdFromToken(jwt);
-  return { ...response.data, userId: userId || undefined };
+    const userId = getUserIdFromToken(jwt);
+    console.log('User ID from token:', userId);
+    return { ...response.data, userId: userId || undefined };
+  } catch (error: any) {
+    console.error('Signup API error:', error);
+    console.error('Error response:', error.response?.data);
+    throw error;
+  }
 };
 
 // サインイン

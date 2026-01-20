@@ -23,23 +23,45 @@ export default function SignUpScreen() {
 
   const handleSignUp = async (): Promise<void> => {
     if (!name || !email || !password) {
-      Alert.alert('エラー', 'すべての項目を入力してください');
+      const errorMsg = 'すべての項目を入力してください';
+      console.log('Validation error:', errorMsg);
+      if (Platform.OS === 'web') {
+        alert(errorMsg);
+      } else {
+        Alert.alert('エラー', errorMsg);
+      }
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('エラー', 'パスワードは6文字以上で入力してください');
+      const errorMsg = 'パスワードは6文字以上で入力してください';
+      console.log('Validation error:', errorMsg);
+      if (Platform.OS === 'web') {
+        alert(errorMsg);
+      } else {
+        Alert.alert('エラー', errorMsg);
+      }
       return;
     }
 
+    console.log('Starting signup:', { name, email });
     setLoading(true);
     const result = await signUp(name, email, password);
     setLoading(false);
 
+    console.log('Signup result:', result);
+
     if (result.success && result.userId) {
+      console.log('Signup successful, navigating to:', `/user/${result.userId}`);
       router.replace(`/user/${result.userId}` as any);
     } else if (!result.success) {
-      Alert.alert('エラー', result.error || 'サインアップに失敗しました');
+      const errorMsg = result.error || 'サインアップに失敗しました';
+      console.error('Signup failed:', errorMsg);
+      if (Platform.OS === 'web') {
+        alert(errorMsg);
+      } else {
+        Alert.alert('エラー', errorMsg);
+      }
     }
   };
 

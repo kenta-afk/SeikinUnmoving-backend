@@ -42,18 +42,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     password: string
   ): Promise<AuthResult> => {
     try {
+      console.log('API signup starting:', { name, email });
       const result = await api.signup(name, email, password);
+      console.log('API signup result:', result);
+      
       // バックグラウンドでユーザー情報を取得
       api.getUser().then(userData => {
+        console.log('User data fetched:', userData);
         setUser(userData);
         setIsAuthenticated(true);
+      }).catch(err => {
+        console.error('Failed to fetch user data:', err);
       });
+      
       return { success: true, userId: result.userId };
     } catch (error: any) {
       console.error('サインアップエラー:', error);
+      console.error('Error response:', error.response?.data);
       return {
         success: false,
-        error: error.response?.data?.message || 'サインアップに失敗しました',
+        error: error.response?.data?.message || error.message || 'サインアップに失敗しました',
       };
     }
   };
