@@ -181,32 +181,13 @@ where
         let client = match self.client_repo.get_by_user_id(command.user_id).await? {
             Some(client) => client,
             None => {
-                println!(
-                    "[DEBUG] Client not found for user_id: {:?}",
-                    command.user_id
-                );
                 return Err(ServiceError::ClientNotFound);
             }
         };
 
-        println!(
-            "[DEBUG] Comparing JTIs - DB: {:?}, Request: {:?}, Exp: {}, Now: {}",
-            client.jti,
-            command.jti,
-            client.exp,
-            chrono::Utc::now().timestamp()
-        );
-
         if client.jti == command.jti && client.exp > chrono::Utc::now().timestamp() {
             self.client_repo.delete_by_user_id(command.user_id).await?;
         } else {
-            println!(
-                "[ERROR] JTI mismatch or expired - DB JTI: {:?}, Request JTI: {:?}, JTI match: {}, Expired: {}",
-                client.jti,
-                command.jti,
-                client.jti == command.jti,
-                client.exp <= chrono::Utc::now().timestamp()
-            );
             return Err(ServiceError::ClientNotFound);
         }
 
