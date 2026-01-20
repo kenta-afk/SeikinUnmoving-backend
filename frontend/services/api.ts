@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import Constants from 'expo-constants';
 import type {
   SignUpRequest,
   SignUpResponse,
@@ -11,7 +12,17 @@ import type {
 } from '../types';
 
 // 環境変数からAPI URLを取得（デフォルトはローカル開発環境）
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 
+  Constants.expoConfig?.extra?.apiUrl || 
+  'http://localhost:8080';
+
+// デバッグ用にAPI URLを出力
+console.log('API Configuration:', {
+  EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+  extraApiUrl: Constants.expoConfig?.extra?.apiUrl,
+  API_BASE_URL,
+  allEnvVars: Object.keys(process.env).filter(key => key.startsWith('EXPO_'))
+});
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
