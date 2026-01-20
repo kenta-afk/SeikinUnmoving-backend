@@ -26,7 +26,7 @@ console.log('API Configuration:', {
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: false,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -64,7 +64,7 @@ api.interceptors.response.use(
             `${API_BASE_URL}/user/refresh`,
             {},
             {
-              withCredentials: false,
+              withCredentials: true,
               headers: {
                 'Content-Type': 'application/json',
               },

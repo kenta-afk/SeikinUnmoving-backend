@@ -19,9 +19,10 @@ async fn main(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let mut response = router.run(req, env).await?;
     
     let headers = response.headers_mut();
-    headers.set("Access-Control-Allow-Origin", "*")?;
+    headers.set("Access-Control-Allow-Origin", "https://cf10ec28.seikin-frontend.pages.dev")?;
     headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")?;
     headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")?;
+    headers.set("Access-Control-Allow-Credentials", "true")?;
     headers.set("Access-Control-Max-Age", "86400")?;
     
     Ok(response)
