@@ -6,7 +6,7 @@ use worker::{Router, Request, Response, Result, RouteContext};
 // OPTIONSリクエストを処理（CORSプリフライト）
 async fn handle_options(_req: Request, _ctx: RouteContext<()>) -> Result<Response> {
     let headers = worker::Headers::new();
-    headers.set("Access-Control-Allow-Origin", "https://cf10ec28.seikin-frontend.pages.dev")?;
+    headers.set("Access-Control-Allow-Origin", "https://c1356b39.seikin-frontend.pages.dev")?;
     headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")?;
     headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")?;
     headers.set("Access-Control-Allow-Credentials", "true")?;
