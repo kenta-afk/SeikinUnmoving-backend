@@ -112,7 +112,7 @@ export const signup = async (
   const requestData: SignUpRequest = { name, email, password };
   
   try {
-    const response = await api.post<SignUpResponse>('/user/signup', requestData);
+    const response = await api.post<SignUpResponse>('/api/user/signup', requestData);
     console.log('Signup API response:', response.data);
 
     const { jwt, refresh_token } = response.data;
@@ -135,7 +135,7 @@ export const signin = async (
   password: string
 ): Promise<SignInResponse & { userId?: string }> => {
   const requestData: SignInRequest = { email, password };
-  const response = await api.post<SignInResponse>('/user/signin', requestData);
+  const response = await api.post<SignInResponse>('/api/user/signin', requestData);
 
   const { jwt, refresh_token } = response.data;
   await AsyncStorage.setItem('jwt', jwt);
@@ -147,14 +147,14 @@ export const signin = async (
 
 // ユーザー情報取得
 export const getUser = async (): Promise<GetUserResponse> => {
-  const response = await api.get<GetUserResponse>('/user/me');
+  const response = await api.get<GetUserResponse>('/api/user/me');
   return response.data;
 };
 
 // ログアウト
 export const logout = async (): Promise<void> => {
   try {
-    await api.post('/user/logout');
+    await api.post('/api/user/logout');
   } catch (error) {
     console.error('Logout API error:', error);
     // APIエラーでもローカルのトークンは削除する
@@ -166,11 +166,91 @@ export const logout = async (): Promise<void> => {
 
 // トークンリフレッシュ
 export const refreshToken = async (): Promise<RefreshResponse> => {
-  const response = await api.post<RefreshResponse>('/user/refresh');
+  const response = await api.post<RefreshResponse>('/refresh');
   const { jwt, refresh_token } = response.data;
   await AsyncStorage.setItem('jwt', jwt);
   await AsyncStorage.setItem('refresh_token', refresh_token);
   return response.data;
+};
+
+// ゲーム関連の型定義
+export interface FacePosition {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface StartGameRequest {
+  user_id: string;
+  movement_threshold?: number;
+  duration_seconds?: number;
+}
+
+export interface StartGameResponse {
+  session_id: string;
+  started_at: string;
+  duration_seconds: number;
+}
+
+export interface UpdatePositionRequest {
+  session_id: string;
+  position: FacePosition;
+}
+
+export interface UpdatePositionResponse {
+  has_moved: boolean;
+  game_status: string;
+  message?: string;
+}
+
+export interface GameStatusResponse {
+  session_id: string;
+  user_id: string;
+  status: string;
+  started_at: string;
+  ended_at?: string;
+  elapsed_seconds: number;
+  duration_seconds: number;
+}
+
+// ゲーム開始
+export const startGame = async (
+  userId: string,
+  movementThreshold: number = 20,
+  durationSeconds: number = 30
+): Promise<StartGameResponse> => {
+  const requestData: StartGameRequest = {
+    user_id: userId,
+    movement_threshold: movementThreshold,
+    duration_seconds: durationSeconds,
+  };
+  const response = await api.post<StartGameResponse>('/api/game/start', requestData);
+  return response.data;
+};
+
+// 顔位置を更新
+export const updatePosition = async (
+  sessionId: string,
+  position: FacePosition
+): Promise<UpdatePositionResponse> => {
+  const requestData: UpdatePositionRequest = {
+    session_id: sessionId,
+    position,
+  };
+  const response = await api.post<UpdatePositionResponse>('/api/game/update-position', requestData);
+  return response.data;
+};
+
+// ゲーム状態を取得
+export const getGameStatus = async (sessionId: string): Promise<GameStatusResponse> => {
+  const response = await api.get<GameStatusResponse>(`/api/game/status/${sessionId}`);
+  return response.data;
+};
+
+// ゲーム終了
+export const endGame = async (sessionId: string): Promise<void> => {
+  await api.post(`/api/game/end/${sessionId}`);
 };
 
 export default api;

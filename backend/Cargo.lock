@@ -1030,6 +1030,12 @@ dependencies = [
 [[package]]
 name = "gameservice"
 version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "thiserror 2.0.17",
+ "utoipa",
+]
 
 [[package]]
 name = "generic-array"
@@ -3090,7 +3096,9 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "sqlx",
  "thiserror 2.0.17",
+ "tokio",
  "uuid",
 ]
 

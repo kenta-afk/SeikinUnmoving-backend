@@ -3,7 +3,7 @@ FROM rust:1.90-bookworm
 
 # Install mold linker and build dependencies
 RUN apt-get update && \
-    apt-get install -y clang mold && \
+    apt-get install -y clang mold cmake perl golang-go && \
     rm -rf /var/lib/apt/lists/*
 
 # Configure cargo to use mold
@@ -30,7 +30,6 @@ COPY db/migrations /app/db/migrations
 COPY presentation/dev/.env /app/.env
 
 # Build the application in debug mode for faster compilation
-
 ENV SQLX_OFFLINE=true
 RUN cargo build --package apiroute
 

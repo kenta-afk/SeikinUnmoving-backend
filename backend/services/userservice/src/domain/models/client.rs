@@ -56,4 +56,20 @@ impl Client {
             created_at: self.created_at,
         }
     }
+    
+    pub fn from_db(
+        id: ClientId,
+        user_id: UserId,
+        jti: Uuid,
+        exp: i64,
+        created_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            user_id,
+            jti,
+            exp,
+            created_at,
+        }
+    }
 }

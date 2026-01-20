@@ -8,10 +8,12 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 
 export default function HomeScreen() {
   const { user, signOut, refreshUser, loading } = useAuth();
+  const router = useRouter();
   const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const onRefresh = async (): Promise<void> => {
@@ -76,6 +78,13 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
+
+      <TouchableOpacity 
+        style={styles.gameButton} 
+        onPress={() => router.push('/game')}
+      >
+        <Text style={styles.gameButtonText}>🎮 動かないゲームを始める</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
         <Text style={styles.logoutButtonText}>ログアウト</Text>
@@ -156,6 +165,24 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#007AFF',
     borderRadius: 5,
+  },
+  gameButton: {
+    backgroundColor: '#4CAF50',
+    padding: 18,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  gameButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   logoutButton: {
     backgroundColor: '#FF3B30',

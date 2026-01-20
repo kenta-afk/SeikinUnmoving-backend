@@ -32,10 +32,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .map_err(|e| format!("Failed to build service: {}", e))?;
 
+    let game_service = gameservice::build_service();
+
     let jwt_config = state::JwtConfig::new(&secret_key);
 
     let app_state = state::AppState {
         user_service,
+        game_service,
         jwt_config,
     };
 

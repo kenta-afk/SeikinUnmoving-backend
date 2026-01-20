@@ -13,8 +13,8 @@ pub struct GetUserResponse {
 }
 
 #[utoipa::path(
-    post,
-    path = "/api/user",
+    get,
+    path = "/api/user/me",
     tag = "user",
     responses(
         (status = 200, description = "User found", body = GetUserResponse),

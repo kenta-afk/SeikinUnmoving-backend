@@ -17,6 +17,9 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::routes::user::get_user,
         crate::routes::user::refresh,
         crate::routes::user::logout,
+        crate::routes::game::start_game,
+        crate::routes::game::update_position,
+        crate::routes::game::get_game_status,
     ),
     components(
         schemas(
@@ -31,23 +34,32 @@ use utoipa_swagger_ui::SwaggerUi;
     ),
     tags(
         (name = "user", description = "User management endpoints"),
+        (name = "game", description = "Game endpoints"),
         (name = "health", description = "Health check endpoints")
     )
 )]
 struct ApiDoc;
 
-pub fn build_router<US>(app_state: AppState<US>) -> Router
+pub fn build_router<US, GS>(app_state: AppState<US, GS>) -> Router
 where
     US: userservice::UserService + Clone + Send + Sync,
+    GS: gameservice::GameService + Clone + Send + Sync,
 {
     let health_route = Router::new().route("/health", get(crate::routes::check::health::health));
 
     let user_route = Router::new()
-        .route("/user/signup", post(crate::routes::user::signup))
-        .route("/user/signin", post(crate::routes::user::signin))
-        .route("/user/logout", post(crate::routes::user::logout))
-        .route("/refresh", post(crate::routes::user::refresh))
-        .route("/api/user", post(crate::routes::user::get_user));
+        .route("/api/user/signup", post(crate::routes::user::signup))
+        .route("/api/user/signin", post(crate::routes::user::signin))
+        .route("/api/user/logout", post(crate::routes::user::logout))
+        .route("/api/user/me", get(crate::routes::user::get_user))
+        .route("/api/user", post(crate::routes::user::get_user))
+        .route("/refresh", post(crate::routes::user::refresh));
+
+    // ゲームルート
+    let game_route = Router::new()
+        .route("/api/game/start", post(crate::routes::game::start_game))
+        .route("/api/game/update-position", post(crate::routes::game::update_position))
+        .route("/api/game/status/{session_id}", get(crate::routes::game::get_game_status));
 
     let cors = CorsLayer::new()
         .allow_origin(
@@ -63,6 +75,7 @@ where
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .merge(health_route)
         .merge(user_route)
+        .merge(game_route)
         .layer(cors)
         .with_state(app_state)
 }

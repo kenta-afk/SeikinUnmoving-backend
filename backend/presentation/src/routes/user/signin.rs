@@ -19,7 +19,7 @@ pub struct SignInResponse {
 
 #[utoipa::path(
     post,
-    path = "/user/signin",
+    path = "/api/user/signin",
     tag = "user",
     request_body = SignInRequest,
     responses(
