@@ -142,17 +142,27 @@ where
             .secret_service
             .create_refresh_token(&refresh_token_claims)?;
 
-        let mut client = match self.client_repo.get_by_user_id(user.id()).await? {
-            Some(client) => client,
-            None => return Err(ServiceError::ClientNotFound),
-        };
-
-        let updated_client = client.update(
-            user.id(),
-            refresh_token_claims.jti,
-            refresh_token_claims.exp,
-        );
-        self.client_repo.save(updated_client.into_save()).await?;
+        // Clientが存在する場合は更新、存在しない場合は新規作成
+        match self.client_repo.get_by_user_id(user.id()).await? {
+            Some(mut client) => {
+                let updated_client = client.update(
+                    user.id(),
+                    refresh_token_claims.jti,
+                    refresh_token_claims.exp,
+                );
+                self.client_repo.save(updated_client.into_save()).await?;
+            }
+            None => {
+                // ログアウト後の再ログインなどでClientが存在しない場合は新規作成
+                let new_client = Client::new(
+                    user.id(),
+                    refresh_token_claims.jti,
+                    refresh_token_claims.exp,
+                    &self.uuid_service,
+                );
+                self.client_repo.create(new_client.into_create()).await?;
+            }
+        }
 
         Ok(SignInDto { jwt, refresh_token })
     }
