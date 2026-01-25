@@ -27,6 +27,12 @@ pub struct GameServiceImpl {
     session_manager: GameSessionManager,
 }
 
+impl Default for GameServiceImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GameServiceImpl {
     pub fn new() -> Self {
         Self {
