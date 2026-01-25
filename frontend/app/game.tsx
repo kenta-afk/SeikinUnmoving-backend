@@ -19,6 +19,7 @@ export default function GameScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const gameStateRef = useRef<'idle' | 'playing' | 'success' | 'failed'>('idle'); // gameStateの最新値を保持
   const gameEndingRef = useRef<boolean>(false); // ゲーム終了処理中フラグ
+  const eyesClosedStartTimeRef = useRef<number | null>(null); // 目が細い状態が始まった時刻
 
   // gameStateが変更されたらrefも更新
   useEffect(() => {
@@ -37,12 +38,12 @@ export default function GameScreen() {
         return;
       }
 
-      // スクリプトの追加（順番に読み込む）
+      // スクリプトの追加（順番に読み込む）- バージョンを0.4に固定
       const scripts = [
-        'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js',
-        'https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js',
-        'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js',
-        'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js'
+        'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/control_utils@0.6/control_utils.js',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4/face_mesh.js'
       ];
 
       for (const src of scripts) {
@@ -143,14 +144,34 @@ export default function GameScreen() {
             const rightEyeHeight = Math.abs(rightEyeBottom.y - rightEyeTop.y);
             const avgEyeHeight = (leftEyeHeight + rightEyeHeight) / 2;
             
-            // 笑顔判定：目が細い
-            const isSmiling = avgEyeHeight < 0.015;
+            // 目が細いかどうかを判定
+            const eyesClosed = avgEyeHeight < 0.015;
+            const currentTime = Date.now();
+            
+            // 目が細い状態が続いているかをチェック
+            if (eyesClosed) {
+              if (eyesClosedStartTimeRef.current === null) {
+                // 目が細い状態が始まった
+                eyesClosedStartTimeRef.current = currentTime;
+              }
+            } else {
+              // 目が開いたのでタイマーをリセット
+              eyesClosedStartTimeRef.current = null;
+            }
+            
+            // 目が細い状態が3秒間続いたかを判定
+            const eyesClosedDuration = eyesClosedStartTimeRef.current !== null 
+              ? (currentTime - eyesClosedStartTimeRef.current) / 1000 
+              : 0;
+            const isSmiling = eyesClosedDuration >= 3.0;
             
             console.log('笑顔判定:', { 
               leftEyeHeight: leftEyeHeight.toFixed(4),
               rightEyeHeight: rightEyeHeight.toFixed(4),
               avgEyeHeight: avgEyeHeight.toFixed(4), 
               threshold: 0.015,
+              eyesClosed,
+              eyesClosedDuration: eyesClosedDuration.toFixed(2),
               isSmiling 
             });
             
@@ -169,10 +190,10 @@ export default function GameScreen() {
             });
             
             // デバッグ情報と口角を強調表示
-            canvasCtx.fillStyle = isSmiling ? '#FF0000' : '#00FF00';
+            canvasCtx.fillStyle = isSmiling ? '#FF0000' : (eyesClosed ? '#FFA500' : '#00FF00');
             canvasCtx.font = '20px Arial';
             canvasCtx.fillText(
-              isSmiling ? '😊 笑顔検出!' : '😐 真顔',
+              isSmiling ? '😊 笑顔検出!' : (eyesClosed ? `⚠️ 目が細い (${eyesClosedDuration.toFixed(1)}s)` : '😐 真顔'),
               10,
               30
             );
@@ -196,9 +217,14 @@ export default function GameScreen() {
               100
             );
             canvasCtx.fillText(
-              `ゲーム状態: ${gameState}`,
+              `目が細い継続時間: ${eyesClosedDuration.toFixed(1)}s / 3.0s`,
               10,
               120
+            );
+            canvasCtx.fillText(
+              `ゲーム状態: ${gameState}`,
+              10,
+              140
             );
             
             setIsSmiling(isSmiling);
@@ -226,6 +252,7 @@ export default function GameScreen() {
           } else {
             // 顔が検出されない = 失敗
             setIsSmiling(false);
+            eyesClosedStartTimeRef.current = null; // タイマーをリセット
             
             if (gameStateRef.current === 'playing' && !gameEndingRef.current) {
               console.log('顔消失！ゲームオーバー', { gameState: gameStateRef.current });
@@ -355,14 +382,18 @@ export default function GameScreen() {
       }
     }
 
-    // 結果を表示してからホームに戻る
+    // 結果を表示してからマイページに戻る
     const message = result === 'success' 
       ? '🎉 成功！時間切れまで耐えました！' 
       : '😢 失敗...笑ってしまいました（または顔が消えました）';
     alert(message);
     
-    // ホームページに戻る
-    router.push('/home');
+    // マイページに戻る
+    if (user?.user_id) {
+      router.push(`/user/${user.user_id}` as any);
+    } else {
+      router.push('/');
+    }
   };
 
   // リセット

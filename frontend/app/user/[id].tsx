@@ -105,9 +105,7 @@ export default function UserScreen() {
         <View style={styles.actionsCard}>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => {
-              // ゲーム画面への遷移（今後実装）
-            }}
+            onPress={() => router.push('/game')}
           >
             <Text style={styles.actionButtonText}>ゲームを始める</Text>
           </TouchableOpacity>
