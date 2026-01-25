@@ -60,7 +60,7 @@ impl UserRepository for UserRepositoryImpl {
         let seikin_similarity = user.seikin_similarity;
         let created_at = user.created_at;
         let updated_at = user.updated_at;
-        
+
         sqlx::query!(
             r#"
             INSERT INTO users (id, name, email, password, seikin_similarity, created_at, updated_at)
@@ -104,7 +104,7 @@ impl UserRepository for UserRepositoryImpl {
                     .with_timezone(&chrono::Utc),
                 chrono::DateTime::parse_from_rfc3339(&row.updated_at)
                     .expect("Invalid datetime")
-                    .with_timezone(&chrono::Utc)
+                    .with_timezone(&chrono::Utc),
             )
         }))
     }
@@ -135,7 +135,7 @@ impl UserRepository for UserRepositoryImpl {
                     .with_timezone(&chrono::Utc),
                 chrono::DateTime::parse_from_rfc3339(&row.updated_at)
                     .expect("Invalid datetime")
-                    .with_timezone(&chrono::Utc)
+                    .with_timezone(&chrono::Utc),
             )
         }))
     }

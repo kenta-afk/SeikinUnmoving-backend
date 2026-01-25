@@ -56,7 +56,7 @@ impl Client {
             created_at: self.created_at,
         }
     }
-    
+
     pub fn from_db(
         id: ClientId,
         user_id: UserId,

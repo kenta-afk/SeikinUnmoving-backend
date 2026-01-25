@@ -1,16 +1,21 @@
 use chrono::Utc;
 
-use super::command::game_command::GameSessionManager;
-use super::dto::game_dto::{
-    GameStatusResponse, StartGameRequest, StartGameResponse, UpdatePositionRequest,
-    UpdatePositionResponse,
+use super::{
+    command::game_command::GameSessionManager,
+    dto::game_dto::{
+        GameStatusResponse, StartGameRequest, StartGameResponse, UpdatePositionRequest,
+        UpdatePositionResponse,
+    },
 };
 use crate::domain::models::game_session::GameStatus;
 
 /// ゲームサービストレイト
 pub trait GameService: Clone + Send + Sync + 'static {
     fn start_game(&self, request: StartGameRequest) -> Result<StartGameResponse, String>;
-    fn update_position(&self, request: UpdatePositionRequest) -> Result<UpdatePositionResponse, String>;
+    fn update_position(
+        &self,
+        request: UpdatePositionRequest,
+    ) -> Result<UpdatePositionResponse, String>;
     fn get_game_status(&self, session_id: &str) -> Result<GameStatusResponse, String>;
     fn end_game(&self, session_id: &str) -> Result<(), String>;
     fn cleanup_expired_sessions(&self) -> Result<usize, String>;
@@ -86,7 +91,7 @@ impl GameService for GameServiceImpl {
     /// ゲームの状態を取得
     fn get_game_status(&self, session_id: &str) -> Result<GameStatusResponse, String> {
         let session = self.session_manager.get_session(session_id)?;
-        
+
         let elapsed = Utc::now()
             .signed_duration_since(session.started_at)
             .num_seconds();
@@ -119,4 +124,3 @@ impl GameService for GameServiceImpl {
         self.session_manager.cleanup_expired_sessions(3600)
     }
 }
-

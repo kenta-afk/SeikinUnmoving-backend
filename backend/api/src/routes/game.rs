@@ -1,31 +1,16 @@
 use gameservice::{
-    GameRepository, GameRepositoryD1, GameResult, GameStatus, StartGameRequest,
-    StartGameResponse, UpdatePositionRequest, UpdatePositionResponse,
+    GameService, GameServiceImpl, StartGameRequest, StartGameResponse, UpdatePositionRequest,
+    UpdatePositionResponse,
 };
-use serde::{Deserialize, Serialize};
 use worker::*;
 
-use crate::adapters::auth::extract_user_from_jwt;
-
-/// ゲームセッションマネージャー（グローバル状態として保持）
-static GAME_SESSIONS: once_cell::sync::Lazy<
-    std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, GameSessionState>>>,
-> = once_cell::sync::Lazy::new(|| std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())));
-
-#[derive(Clone)]
-struct GameSessionState {
-    session_id: String,
-    user_id: String,
-    started_at: chrono::DateTime<chrono::Utc>,
-    duration_seconds: i64,
-    status: GameStatus,
-}
+use super::user::extractor::jwt::extract_user_id_from_jwt;
 
 /// ゲーム開始
-async fn start_game(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
-    // JWTからユーザー情報を取得
-    let user = match extract_user_from_jwt(&req, &ctx.env) {
-        Ok(user) => user,
+async fn start_game(mut req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+    // JWTからユーザーIDを取得
+    let user_id = match extract_user_id_from_jwt(&req) {
+        Ok(id) => id,
         Err(_) => {
             return Response::error("Unauthorized", 401);
         }
@@ -33,28 +18,18 @@ async fn start_game(mut req: Request, ctx: RouteContext<()>) -> Result<Response>
 
     let body: StartGameRequest = req.json().await?;
 
-    // セッションIDを生成
-    let session_id = format!("game_{}", uuid::Uuid::new_v4());
-    let started_at = chrono::Utc::now();
+    // GameServiceを作成
+    let game_service = GameServiceImpl::new();
 
-    let session_state = GameSessionState {
-        session_id: session_id.clone(),
-        user_id: user.user_id.clone(),
-        started_at,
-        duration_seconds: body.duration_seconds,
-        status: GameStatus::Active,
-    };
-
-    // セッションを保存
-    {
-        let mut sessions = GAME_SESSIONS.lock().unwrap();
-        sessions.insert(session_id.clone(), session_state);
-    }
-
-    let response = StartGameResponse {
-        session_id,
-        started_at: started_at.to_rfc3339(),
-        duration_seconds: body.duration_seconds,
+    // ゲームを開始
+    let mut request = body;
+    request.user_id = user_id.to_string();
+    
+    let response = match game_service.start_game(request) {
+        Ok(res) => res,
+        Err(e) => {
+            return Response::error(format!("Failed to start game: {}", e), 500);
+        }
     };
 
     Response::from_json(&response)
@@ -64,99 +39,32 @@ async fn start_game(mut req: Request, ctx: RouteContext<()>) -> Result<Response>
 async fn update_position(mut req: Request, _ctx: RouteContext<()>) -> Result<Response> {
     let body: UpdatePositionRequest = req.json().await?;
 
-    let mut sessions = GAME_SESSIONS.lock().unwrap();
-    let session = match sessions.get_mut(&body.session_id) {
-        Some(s) => s,
-        None => return Response::error("Session not found", 404),
-    };
+    // GameServiceを作成
+    let game_service = GameServiceImpl::new();
 
-    // ゲームが既に終了している場合
-    if session.status != GameStatus::Active {
-        let response = UpdatePositionResponse {
-            has_moved: false,
-            game_status: format!("{:?}", session.status).to_lowercase(),
-            message: Some("Game already ended".to_string()),
-        };
-        return Response::from_json(&response);
-    }
-
-    // 時間切れチェック
-    let elapsed = chrono::Utc::now()
-        .signed_duration_since(session.started_at)
-        .num_seconds();
-    
-    if elapsed >= session.duration_seconds {
-        session.status = GameStatus::Success;
-        let response = UpdatePositionResponse {
-            has_moved: false,
-            game_status: "success".to_string(),
-            message: Some("Time's up! You won!".to_string()),
-        };
-        return Response::from_json(&response);
-    }
-
-    // 簡易的な動き検出（実際の実装では顔位置を比較）
-    let has_moved = false; // TODO: 実際の動き検出ロジック
-
-    let response = UpdatePositionResponse {
-        has_moved,
-        game_status: "active".to_string(),
-        message: None,
+    // 位置を更新
+    let response = match game_service.update_position(body) {
+        Ok(res) => res,
+        Err(e) => {
+            return Response::error(format!("Failed to update position: {}", e), 500);
+        }
     };
 
     Response::from_json(&response)
 }
 
 /// ゲーム終了
-async fn end_game(req: Request, ctx: RouteContext<()>) -> Result<Response> {
+async fn end_game(_req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let session_id = ctx.param("session_id").unwrap().to_string();
 
-    // セッションを取得
-    let session = {
-        let sessions = GAME_SESSIONS.lock().unwrap();
-        sessions.get(&session_id).cloned()
-    };
+    // GameServiceを作成
+    let game_service = GameServiceImpl::new();
 
-    let session = match session {
-        Some(s) => s,
-        None => return Response::error("Session not found", 404),
-    };
-
-    // 時間切れチェック
-    let elapsed = chrono::Utc::now()
-        .signed_duration_since(session.started_at)
-        .num_seconds();
-    
-    let is_clear = if elapsed >= session.duration_seconds {
-        true
-    } else {
-        match session.status {
-            GameStatus::Success => true,
-            _ => false,
-        }
-    };
-
-    // D1データベースに保存
-    let db = ctx.env.d1("DB")?;
-    let repo = GameRepositoryD1::new(db);
-    
-    let game_result = GameResult::new(
-        format!("game_{}", uuid::Uuid::new_v4()),
-        session.user_id.clone(),
-        is_clear,
-    );
-
-    repo.save_game_result(game_result)
-        .await
-        .map_err(|e| worker::Error::RustError(e))?;
-
-    // セッションを削除
-    {
-        let mut sessions = GAME_SESSIONS.lock().unwrap();
-        sessions.remove(&session_id);
+    // ゲームを終了
+    match game_service.end_game(&session_id) {
+        Ok(_) => Response::ok("Game ended"),
+        Err(e) => Response::error(format!("Failed to end game: {}", e), 500),
     }
-
-    Response::ok("Game ended")
 }
 
 pub fn register(router: Router<'_, ()>) -> Router<'_, ()> {

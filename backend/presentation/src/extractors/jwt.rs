@@ -1,7 +1,7 @@
 use crate::state::JwtConfig;
 use axum::{
     extract::{FromRef, FromRequestParts},
-    http::{StatusCode, request::Parts, header},
+    http::{StatusCode, header, request::Parts},
 };
 use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken::decode;
@@ -27,10 +27,8 @@ where
 
         // Authorizationヘッダーから取得を試みる
         let jwt_token = if let Some(auth_header) = parts.headers.get(header::AUTHORIZATION) {
-            let auth_str = auth_header
-                .to_str()
-                .map_err(|_| StatusCode::UNAUTHORIZED)?;
-            
+            let auth_str = auth_header.to_str().map_err(|_| StatusCode::UNAUTHORIZED)?;
+
             if auth_str.starts_with("Bearer ") {
                 Some(auth_str[7..].to_string())
             } else {

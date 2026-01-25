@@ -8,8 +8,6 @@ pub struct JwtClaims {
 
 impl JwtClaims {
     pub fn new(user_id: UserId, _expires_in_seconds: i64) -> Self {
-        Self {
-            sub: user_id,
-        }
+        Self { sub: user_id }
     }
 }

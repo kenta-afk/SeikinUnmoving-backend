@@ -59,9 +59,18 @@ where
     // ゲームルート
     let game_route = Router::new()
         .route("/api/game/start", post(crate::routes::game::start_game))
-        .route("/api/game/update-position", post(crate::routes::game::update_position))
-        .route("/api/game/status/{session_id}", get(crate::routes::game::get_game_status))
-        .route("/api/game/end/{session_id}", post(crate::routes::game::end_game));
+        .route(
+            "/api/game/update-position",
+            post(crate::routes::game::update_position),
+        )
+        .route(
+            "/api/game/status/{session_id}",
+            get(crate::routes::game::get_game_status),
+        )
+        .route(
+            "/api/game/end/{session_id}",
+            post(crate::routes::game::end_game),
+        );
 
     let cors = CorsLayer::new()
         .allow_origin(

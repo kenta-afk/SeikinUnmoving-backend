@@ -1,5 +1,5 @@
 use crate::{extractors::AuthenticatedUser, state::GameServiceState};
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use gameservice::{GameService, StartGameRequest, StartGameResponse};
 
 #[utoipa::path(

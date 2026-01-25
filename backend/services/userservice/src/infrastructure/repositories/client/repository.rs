@@ -1,5 +1,9 @@
 use crate::domain::{
-    models::{client::Client, error::DbError, id::{ClientId, UserId}},
+    models::{
+        client::Client,
+        error::DbError,
+        id::{ClientId, UserId},
+    },
     repositories::client::{
         client_repository::ClientRepository, create_client::CreateClient, save_client::SaveClient,
     },
@@ -65,7 +69,7 @@ impl ClientRepository for ClientRepositoryImpl {
         let jti = client.jti.to_string();
         let exp = client.exp;
         let created_at = client.created_at;
-        
+
         sqlx::query!(
             r#"
             INSERT INTO clients (id, user_id, jti, exp, created_at)
@@ -110,7 +114,7 @@ impl ClientRepository for ClientRepositoryImpl {
         let jti = client.jti.to_string();
         let exp = client.exp;
         let id = client.id.to_string();
-        
+
         sqlx::query!(
             r#"
             UPDATE clients
@@ -128,7 +132,7 @@ impl ClientRepository for ClientRepositoryImpl {
 
     async fn delete_by_user_id(&self, user_id: UserId) -> Result<(), DbError> {
         let user_id = user_id.to_string();
-        
+
         sqlx::query!(
             r#"
             DELETE FROM clients

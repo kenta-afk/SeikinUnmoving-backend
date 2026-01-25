@@ -11,11 +11,13 @@ pub use application::{
     },
     game_service::{GameService, GameServiceImpl},
 };
-pub use domain::models::{
-    face_position::FacePosition,
-    game_session::{GameSession, GameStatus},
+pub use domain::{
+    game_repository::{GameRepository, GameResult},
+    models::{
+        face_position::FacePosition,
+        game_session::{GameSession, GameStatus},
+    },
 };
-pub use domain::game_repository::{GameRepository, GameResult};
 
 #[cfg(target_arch = "wasm32")]
 pub use infrastructure::repositories::GameRepositoryD1;

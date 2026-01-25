@@ -1,5 +1,8 @@
 use crate::{extractors::AuthenticatedUser, state::GameServiceState};
-use axum::{extract::{Path, State}, http::StatusCode};
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+};
 use gameservice::GameService;
 
 #[utoipa::path(

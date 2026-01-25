@@ -68,13 +68,13 @@ pub async fn build_service(
     secret_key: &str,
 ) -> Result<ConcreteUserService, ServiceError> {
     use sqlx::sqlite::SqlitePoolOptions;
-    
+
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
         .connect(database_url)
         .await
         .map_err(|e| ServiceError::Database(DbError::Generic(e.to_string())))?;
-    
+
     let user_repo = UserRepositoryImpl::new(pool.clone());
     let client_repo = ClientRepositoryImpl::new(pool);
     let uuid_service = UuidServiceImpl;

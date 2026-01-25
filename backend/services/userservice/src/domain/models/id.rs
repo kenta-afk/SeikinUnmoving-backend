@@ -4,7 +4,12 @@ use std::{fmt, str::FromStr};
 use uuid::Uuid;
 
 #[cfg(not(target_arch = "wasm32"))]
-use sqlx::{Type, encode::IsNull, error::BoxDynError, sqlite::{SqliteTypeInfo, SqliteValueRef}};
+use sqlx::{
+    Type,
+    encode::IsNull,
+    error::BoxDynError,
+    sqlite::{SqliteTypeInfo, SqliteValueRef},
+};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct UserId(Uuid);
@@ -46,7 +51,10 @@ impl<'r> sqlx::Decode<'r, sqlx::Sqlite> for UserId {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl<'q> sqlx::Encode<'q, sqlx::Sqlite> for UserId {
-    fn encode_by_ref(&self, buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'q>>) -> Result<IsNull, BoxDynError> {
+    fn encode_by_ref(
+        &self,
+        buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'q>>,
+    ) -> Result<IsNull, BoxDynError> {
         <String as sqlx::Encode<sqlx::Sqlite>>::encode(self.0.to_string(), buf)
     }
 }
@@ -91,7 +99,10 @@ impl<'r> sqlx::Decode<'r, sqlx::Sqlite> for ClientId {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl<'q> sqlx::Encode<'q, sqlx::Sqlite> for ClientId {
-    fn encode_by_ref(&self, buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'q>>) -> Result<IsNull, BoxDynError> {
+    fn encode_by_ref(
+        &self,
+        buf: &mut Vec<sqlx::sqlite::SqliteArgumentValue<'q>>,
+    ) -> Result<IsNull, BoxDynError> {
         <String as sqlx::Encode<sqlx::Sqlite>>::encode(self.0.to_string(), buf)
     }
 }

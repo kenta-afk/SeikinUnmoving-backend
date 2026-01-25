@@ -1,10 +1,14 @@
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use chrono::Utc;
 
-use crate::domain::models::game_session::{GameSession, GameSessionId, GameStatus};
-use crate::domain::models::face_position::FacePosition;
+use crate::domain::models::{
+    face_position::FacePosition,
+    game_session::{GameSession, GameSessionId, GameStatus},
+};
 
 /// ゲームセッション管理サービス
 #[derive(Clone)]
@@ -27,7 +31,12 @@ impl GameSessionManager {
         duration_seconds: i64,
     ) -> Result<GameSession, String> {
         let session_id = format!("game_{}", uuid::Uuid::new_v4());
-        let session = GameSession::new(session_id.clone(), user_id, movement_threshold, duration_seconds);
+        let session = GameSession::new(
+            session_id.clone(),
+            user_id,
+            movement_threshold,
+            duration_seconds,
+        );
 
         let mut sessions = self.sessions.lock().map_err(|e| e.to_string())?;
         sessions.insert(session_id.clone(), session.clone());
@@ -42,7 +51,7 @@ impl GameSessionManager {
         position: FacePosition,
     ) -> Result<(bool, GameStatus), String> {
         let mut sessions = self.sessions.lock().map_err(|e| e.to_string())?;
-        
+
         let session = sessions
             .get_mut(session_id)
             .ok_or_else(|| "Session not found".to_string())?;
@@ -93,7 +102,7 @@ impl GameSessionManager {
     pub fn cleanup_expired_sessions(&self, max_age_seconds: i64) -> Result<usize, String> {
         let mut sessions = self.sessions.lock().map_err(|e| e.to_string())?;
         let now = Utc::now();
-        
+
         let expired_ids: Vec<GameSessionId> = sessions
             .iter()
             .filter(|(_, session)| {
@@ -161,7 +170,7 @@ mod tests {
     fn test_update_position() {
         let manager = GameSessionManager::new();
         let session = manager.start_game("user123".to_string(), 50.0, 30).unwrap();
-        
+
         let pos1 = FacePosition::new(100.0, 100.0, 50.0, 50.0);
         let result = manager.update_position(&session.id, pos1);
         assert!(result.is_ok());

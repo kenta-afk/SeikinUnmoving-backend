@@ -1,30 +1,33 @@
 #[cfg(target_arch = "wasm32")]
 use chrono::{DateTime, Utc};
 #[cfg(target_arch = "wasm32")]
-use worker::*;
+use std::sync::Arc;
+#[cfg(target_arch = "wasm32")]
+use worker::d1::D1Database;
 
 #[cfg(target_arch = "wasm32")]
 use crate::domain::game_repository::{GameRepository, GameResult};
 
 /// D1データベースを使用したゲームリポジトリ実装
 #[cfg(target_arch = "wasm32")]
+#[derive(Clone)]
 pub struct GameRepositoryD1 {
-    db: D1Database,
+    db: Arc<D1Database>,
 }
 
 #[cfg(target_arch = "wasm32")]
 impl GameRepositoryD1 {
     pub fn new(db: D1Database) -> Self {
-        Self { db }
+        Self { db: Arc::new(db) }
     }
 }
 
 #[cfg(target_arch = "wasm32")]
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl GameRepository for GameRepositoryD1 {
     async fn save_game_result(&self, result: GameResult) -> Result<(), String> {
         let is_clear_value = if result.is_clear { 1 } else { 0 };
-        
+
         self.db
             .prepare(
                 "INSERT INTO games (id, user_id, is_clear, created_at) VALUES (?1, ?2, ?3, ?4)",
@@ -59,20 +62,13 @@ impl GameRepository for GameRepositoryD1 {
 
         let mut game_results = Vec::new();
         for row in results_data {
-            let id = row["id"]
-                .as_str()
-                .ok_or("Missing id")?
-                .to_string();
+            let id = row["id"].as_str().ok_or("Missing id")?.to_string();
             let user_id = row["user_id"]
                 .as_str()
                 .ok_or("Missing user_id")?
                 .to_string();
-            let is_clear = row["is_clear"]
-                .as_i64()
-                .ok_or("Missing is_clear")? != 0;
-            let created_at_str = row["created_at"]
-                .as_str()
-                .ok_or("Missing created_at")?;
+            let is_clear = row["is_clear"].as_i64().ok_or("Missing is_clear")? != 0;
+            let created_at_str = row["created_at"].as_str().ok_or("Missing created_at")?;
             let created_at = DateTime::parse_from_rfc3339(created_at_str)
                 .map_err(|e| format!("Failed to parse created_at: {:?}", e))?
                 .with_timezone(&Utc);

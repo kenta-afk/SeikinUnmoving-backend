@@ -113,24 +113,16 @@ mod tests {
 
     #[test]
     fn test_new_game_session() {
-        let session = GameSession::new(
-            "test-session".to_string(),
-            "user-123".to_string(),
-            10.0,
-            30,
-        );
+        let session =
+            GameSession::new("test-session".to_string(), "user-123".to_string(), 10.0, 30);
         assert_eq!(session.status, GameStatus::Active);
         assert!(session.last_position.is_none());
     }
 
     #[test]
     fn test_update_position_no_movement() {
-        let mut session = GameSession::new(
-            "test-session".to_string(),
-            "user-123".to_string(),
-            50.0,
-            30,
-        );
+        let mut session =
+            GameSession::new("test-session".to_string(), "user-123".to_string(), 50.0, 30);
 
         let pos1 = FacePosition::new(100.0, 100.0, 50.0, 50.0);
         let pos2 = FacePosition::new(102.0, 102.0, 50.0, 50.0);
@@ -142,12 +134,8 @@ mod tests {
 
     #[test]
     fn test_update_position_with_movement() {
-        let mut session = GameSession::new(
-            "test-session".to_string(),
-            "user-123".to_string(),
-            10.0,
-            30,
-        );
+        let mut session =
+            GameSession::new("test-session".to_string(), "user-123".to_string(), 10.0, 30);
 
         let pos1 = FacePosition::new(100.0, 100.0, 50.0, 50.0);
         let pos2 = FacePosition::new(200.0, 200.0, 50.0, 50.0);
