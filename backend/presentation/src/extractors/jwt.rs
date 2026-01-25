@@ -29,11 +29,7 @@ where
         let jwt_token = if let Some(auth_header) = parts.headers.get(header::AUTHORIZATION) {
             let auth_str = auth_header.to_str().map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-            if auth_str.starts_with("Bearer ") {
-                Some(auth_str[7..].to_string())
-            } else {
-                None
-            }
+            auth_str.strip_prefix("Bearer ").map(|s| s.to_string())
         } else {
             None
         };
