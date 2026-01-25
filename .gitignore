@@ -17,4 +17,3 @@ node_modules/
 db/data/
 *.db
 *.sqlite
-.sqlx
