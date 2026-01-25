@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE clients\n            SET jti = ?, exp = ?\n            WHERE id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "5dd885b3463b7dc61eaeb8b93162083f5fe788847a4f8698f4c53d4e8bdc1db4"
+}

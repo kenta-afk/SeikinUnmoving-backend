@@ -33,9 +33,10 @@ impl SecretService for SecretServiceImpl {
         verify(password, hashed).unwrap_or(false)
     }
     fn create_jwt(&self, claims: &JwtClaims) -> Result<String, String> {
+        use crate::application::ports::constant::JWT_EXPIRATION_SECONDS;
         let jwt_claims = Claims::with_custom_claims(
             claims.clone(),
-            Duration::from_secs((claims.exp - claims.iat) as u64),
+            Duration::from_secs(JWT_EXPIRATION_SECONDS as u64),
         );
         self.key.authenticate(jwt_claims).map_err(|e| e.to_string())
     }

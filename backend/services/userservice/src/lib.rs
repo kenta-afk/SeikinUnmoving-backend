@@ -64,11 +64,19 @@ pub type ConcreteUserService =
 // 開発環境用のビルド関数
 #[cfg(not(target_arch = "wasm32"))]
 pub async fn build_service(
-    _database_url: &str,
+    database_url: &str,
     secret_key: &str,
 ) -> Result<ConcreteUserService, ServiceError> {
-    let user_repo = UserRepositoryImpl::default();
-    let client_repo = ClientRepositoryImpl::default();
+    use sqlx::sqlite::SqlitePoolOptions;
+
+    let pool = SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect(database_url)
+        .await
+        .map_err(|e| ServiceError::Database(DbError::Generic(e.to_string())))?;
+
+    let user_repo = UserRepositoryImpl::new(pool.clone());
+    let client_repo = ClientRepositoryImpl::new(pool);
     let uuid_service = UuidServiceImpl;
     let secret_service = SecretServiceImpl::new(secret_key);
 

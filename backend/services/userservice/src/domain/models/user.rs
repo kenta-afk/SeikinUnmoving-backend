@@ -2,8 +2,11 @@ use crate::{
     GetUserDto,
     application::ports::{secret_service::SecretService, uuid_service::UuidService},
     domain::{models::id::UserId, repositories::user::create_user::CreateUser},
-    infrastructure::repositories::user::db_user::DbUser,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use crate::infrastructure::repositories::user::db_user::DbUser;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -61,7 +64,29 @@ impl User {
             updated_at: self.updated_at,
         }
     }
-    pub fn from_db(db_user: DbUser) -> Self {
+    pub fn from_db(
+        id: UserId,
+        name: String,
+        email: String,
+        password: String,
+        seikin_similarity: f64,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        User {
+            id,
+            name,
+            email,
+            password,
+            seikin_similarity,
+            created_at,
+            updated_at,
+        }
+    }
+
+    // DbUser構造体からの変換（WASM以外で使用）
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn from_db_struct(db_user: DbUser) -> Self {
         User {
             id: db_user.id,
             name: db_user.name,

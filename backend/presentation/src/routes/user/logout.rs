@@ -12,7 +12,7 @@ pub struct LogoutResponse {
 
 #[utoipa::path(
     post,
-    path = "/user/logout",
+    path = "/api/user/logout",
     tag = "user",
     responses(
         (status = 200, description = "User successfully logged out", body = LogoutResponse),

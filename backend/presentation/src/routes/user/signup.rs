@@ -21,7 +21,7 @@ pub struct SignUpResponse {
 /// Sign up a new user
 #[utoipa::path(
     post,
-    path = "/user/signup",
+    path = "/api/user/signup",
     tag = "user",
     request_body = SignUpRequest,
     responses(
