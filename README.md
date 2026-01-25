@@ -2,71 +2,90 @@
 
 このリポジトリはRust製バックエンドとReact Native (Expo)製フロントエンドのモノレポです。
 
+**主要機能**: MediaPipe Face Meshを使った顔検出による「笑わないゲーム」
+
 ## プロジェクト構成
 
 ```
 .
 ├── backend/          # Rustバックエンド (API, サービス層)
-│   ├── api/         # Cloudflare Workers用API
-│   ├── presentation/# メインAPIサーバー
+│   ├── presentation/# メインAPIサーバー (Axum)
 │   ├── services/    # ドメインサービス
+│   │   ├── userservice/    # ユーザー管理
+│   │   ├── gameservice/    # ゲームロジック
+│   │   └── rankingservice/ # ランキング
 │   └── db/          # データベースマイグレーション
 └── frontend/        # React Native (Expo) フロントエンド
 ```
+
+## 顔検出ゲームについて
+
+### 技術仕様
+- **顔検出**: MediaPipe Face Mesh (Web版)
+- **笑顔判定**: 顔のランドマーク座標から口角の角度を計算
+- **ゲーム時間**: 3分 (180秒)
+- **検出間隔**: リアルタイム (約30fps)
 
 ## Backend (Rust)
 
 ### Prerequisites
 - Docker
 - Docker Compose
-- Rust (cargo)
 
 ### Running with Docker
 
 `backend/` ディレクトリで以下のコマンドを実行:
 
-Start all services (apiroute, Valkey 9.0):
+**すべてのサービスを起動:**
 ```bash
 cd backend
 docker compose up -d
 ```
 
-Stop all services:
+**ログを確認:**
+```bash
+docker compose logs -f apiroute
+```
+
+**サービスを停止:**
 ```bash
 docker compose down
 ```
 
-View logs:
-```bash
-docker compose logs -f
-```
-
 ### Services
-- apiroute: http://localhost:8080
-- Valkey: localhost:6379
+- **apiroute** (API Server): http://localhost:8080
+- **valkey** (Redis互換): localhost:6379
 
 ### Database
-This project uses SQLite as the database. The database file is stored in a Docker volume and will persist across container restarts.
+- SQLite を使用
+- データはDockerボリュームに永続化 (`sqlite_data`)
+- マイグレーションファイル: `backend/db/migrations/`
+
+### API Documentation
+サーバー起動後、以下のURLでAPI仕様を確認できます:
+- Swagger UI: http://localhost:8080/swagger-ui/
+- OpenAPI JSON: http://localhost:8080/api-docs/openapi.json
 
 ## Frontend (React Native / Expo)
 
 ### Prerequisites
 - Node.js (v18以上推奨)
-- npm or yarn
+- npm
 
 ### Setup
 
 ```bash
 cd frontend
-npm install
+npm install --legacy-peer-deps
 ```
 
 ### Running
 
-#### Web
+#### Web (開発用)
 ```bash
 npm run web
 ```
+ブラウザで http://localhost:8081 が開きます
 
 #### iOS (Mac only)
 ```bash
@@ -78,9 +97,37 @@ npm run ios
 npm run android
 ```
 
-### Development
-Expoの開発サーバーが起動し、Web、iOS、Androidで同じコードベースを実行できます。
+### 主な機能
+- **ユーザー認証**: サインアップ/サインイン
+- **顔認識ゲーム**: MediaPipe Face Meshを使用したリアルタイム顔検出
+- **ランキング**: ゲーム結果の記録と表示
+
+### 環境設定
+`.env` ファイルで API エンドポイントを設定:
+```env
+EXPO_PUBLIC_API_URL=http://localhost:8080
+```
 
 ## Setup Instructions
 
-If you clone this repository, please command `$lefthook install` in the backend directory.
+リポジトリをクローンした後:
+
+1. **バックエンドを起動:**
+```bash
+cd backend
+docker compose up -d
+```
+
+2. **フロントエンドを起動:**
+```bash
+cd frontend
+npm install --legacy-peer-deps
+npm run web
+```
+
+3. ブラウザで http://localhost:8081 にアクセス
+
+### 開発時のTips
+- フロントエンドのコード変更は自動でリロードされます
+- バックエンドのログは `docker compose logs -f apiroute` で確認できます
+- APIの型定義を更新する場合: `cd frontend && npm run generate-types`

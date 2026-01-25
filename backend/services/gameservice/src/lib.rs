@@ -15,6 +15,10 @@ pub use domain::models::{
     face_position::FacePosition,
     game_session::{GameSession, GameStatus},
 };
+pub use domain::game_repository::{GameRepository, GameResult};
+
+#[cfg(target_arch = "wasm32")]
+pub use infrastructure::repositories::GameRepositoryD1;
 
 pub type ConcreteGameService = GameServiceImpl;
 

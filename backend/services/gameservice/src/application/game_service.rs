@@ -33,12 +33,13 @@ impl GameServiceImpl {
 impl GameService for GameServiceImpl {
     /// ゲームを開始
     fn start_game(&self, request: StartGameRequest) -> Result<StartGameResponse, String> {
-        // 既にアクティブなセッションがある場合はエラー
-        if let Some(_) = self
+        // 既にアクティブなセッションがある場合は自動終了
+        if let Some(session) = self
             .session_manager
             .get_user_active_session(&request.user_id)?
         {
-            return Err("User already has an active game session".to_string());
+            // 既存セッションを削除
+            let _ = self.session_manager.remove_session(&session.id);
         }
 
         let session = self.session_manager.start_game(

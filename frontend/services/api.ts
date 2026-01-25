@@ -61,7 +61,7 @@ api.interceptors.response.use(
         const refreshToken = await AsyncStorage.getItem('refresh_token');
         if (refreshToken) {
           const response = await axios.post<RefreshResponse>(
-            `${API_BASE_URL}/user/refresh`,
+            `${API_BASE_URL}/api/user/refresh`,
             {},
             {
               withCredentials: true,
@@ -166,7 +166,7 @@ export const logout = async (): Promise<void> => {
 
 // トークンリフレッシュ
 export const refreshToken = async (): Promise<RefreshResponse> => {
-  const response = await api.post<RefreshResponse>('/refresh');
+  const response = await api.post<RefreshResponse>('/api/user/refresh');
   const { jwt, refresh_token } = response.data;
   await AsyncStorage.setItem('jwt', jwt);
   await AsyncStorage.setItem('refresh_token', refresh_token);
@@ -217,14 +217,14 @@ export interface GameStatusResponse {
 // ゲーム開始
 export const startGame = async (
   userId: string,
-  movementThreshold: number = 20,
-  durationSeconds: number = 30
+  durationSeconds: number = 180
 ): Promise<StartGameResponse> => {
+  console.log('startGame called with:', { userId, durationSeconds });
   const requestData: StartGameRequest = {
     user_id: userId,
-    movement_threshold: movementThreshold,
     duration_seconds: durationSeconds,
   };
+  console.log('Request data:', requestData);
   const response = await api.post<StartGameResponse>('/api/game/start', requestData);
   return response.data;
 };

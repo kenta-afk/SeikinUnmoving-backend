@@ -1,10 +1,15 @@
 # Development Dockerfile
 FROM rust:1.90-bookworm
 
-# Install mold linker and build dependencies
+# Install mold linker, cmake, clang and build dependencies
 RUN apt-get update && \
-    apt-get install -y clang mold cmake perl golang-go && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y \
+    mold \
+    cmake \
+    pkg-config \
+    clang \
+    libclang-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Configure cargo to use mold
 ENV RUSTFLAGS="-C link-arg=-fuse-ld=mold"

@@ -1,297 +1,443 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  Dimensions,
-  ActivityIndicator,
-} from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Accelerometer } from 'expo-sensors';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
-import { startGame, updatePosition, endGame, FacePosition } from '../services/api';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { startGame, endGame } from '../services/api';
 
 export default function GameScreen() {
+  const router = useRouter();
   const { user } = useAuth();
-  const [permission, requestPermission] = useCameraPermissions();
-  const [gameStarted, setGameStarted] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [gameStatus, setGameStatus] = useState<'idle' | 'active' | 'failed' | 'success'>('idle');
-  const [message, setMessage] = useState<string>('');
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [duration, setDuration] = useState(30);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [gameState, setGameState] = useState<'idle' | 'playing' | 'success' | 'failed'>('idle');
+  const [timeRemaining, setTimeRemaining] = useState(180);
+  const [gameId, setGameId] = useState<string | null>(null);
+  const [isSmiling, setIsSmiling] = useState(false);
   
-  const lastUpdateRef = useRef<number>(0);
-  const timerRef = useRef<number | null>(null);
-  const gameEndTimeRef = useRef<number | null>(null);
-  const accelerometerSubscription = useRef<any>(null);
-  const baseAcceleration = useRef<{ x: number; y: number; z: number } | null>(null);
-  const currentPosition = useRef<FacePosition>({ x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT / 2, width: 100, height: 100 });
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const faceMeshRef = useRef<any>(null);
+  const cameraRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const gameStateRef = useRef<'idle' | 'playing' | 'success' | 'failed'>('idle'); // gameStateの最新値を保持
+  const gameEndingRef = useRef<boolean>(false); // ゲーム終了処理中フラグ
 
+  // gameStateが変更されたらrefも更新
+  useEffect(() => {
+    gameStateRef.current = gameState;
+    console.log('🔄 gameState更新:', gameState);
+  }, [gameState]);
+
+  // MediaPipeスクリプトのロード
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const loadMediaPipe = async () => {
+      // 既に読み込まれている場合はスキップ
+      if ((window as any).FaceMesh) {
+        console.log('MediaPipe already loaded');
+        return;
+      }
+
+      // スクリプトの追加（順番に読み込む）
+      const scripts = [
+        'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js',
+        'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js'
+      ];
+
+      for (const src of scripts) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.crossOrigin = 'anonymous';
+          script.onload = () => {
+            console.log(`Loaded: ${src}`);
+            resolve();
+          };
+          script.onerror = () => {
+            console.error(`Failed to load script: ${src}`);
+            reject(new Error(`Failed to load ${src}`));
+          };
+          document.head.appendChild(script);
+        });
+      }
+      
+      console.log('All MediaPipe scripts loaded successfully');
+    };
+
+    loadMediaPipe().catch(err => {
+      console.error('Failed to load MediaPipe:', err);
+    });
+  }, []);
+
+  // カメラとFace Meshの初期化（ゲーム開始時に呼ばれる）
+  const initializeFaceMesh = async () => {
+    if (Platform.OS !== 'web') {
+      console.error('This game only works on web browsers');
+      return false;
+    }
+      try {
+        console.log('Initializing MediaPipe Face Mesh...');
+        
+        // MediaPipeがロードされているか確認（最大10秒待機）
+        const FaceMesh = (window as any).FaceMesh;
+        const Camera = (window as any).Camera;
+        
+        if (!FaceMesh || !Camera) {
+          console.log('Waiting for MediaPipe to load...');
+          // スクリプトのロードを待つ
+          let retries = 0;
+          while (retries < 20) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            if ((window as any).FaceMesh && (window as any).Camera) {
+              console.log('MediaPipe loaded after waiting');
+              break;
+            }
+            retries++;
+          }
+          
+          if (!(window as any).FaceMesh || !(window as any).Camera) {
+            alert('MediaPipeライブラリの読み込みに失敗しました。ページをリロードしてください。');
+            return false;
+          }
+        }
+
+        const faceMesh = new (window as any).FaceMesh({
+          locateFile: (file: string) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+          }
+        });
+
+        faceMesh.setOptions({
+          maxNumFaces: 1,
+          refineLandmarks: true,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+
+        faceMesh.onResults((results: any) => {
+          if (!canvasRef.current || !videoRef.current) return;
+
+          const canvasCtx = canvasRef.current.getContext('2d');
+          if (!canvasCtx) return;
+
+          // Clear canvas
+          canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          
+          // Draw video frame
+          canvasCtx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+
+          // 顔のランドマークが検出された場合
+          if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            const landmarks = results.multiFaceLandmarks[0];
+            
+            // 笑顔判定：目が細いかどうかで判定
+            // 目のランドマーク
+            const leftEyeTop = landmarks[159];    // 左目上
+            const leftEyeBottom = landmarks[145]; // 左目下
+            const rightEyeTop = landmarks[386];   // 右目上
+            const rightEyeBottom = landmarks[374];// 右目下
+            
+            // 目の高さを計算
+            const leftEyeHeight = Math.abs(leftEyeBottom.y - leftEyeTop.y);
+            const rightEyeHeight = Math.abs(rightEyeBottom.y - rightEyeTop.y);
+            const avgEyeHeight = (leftEyeHeight + rightEyeHeight) / 2;
+            
+            // 笑顔判定：目が細い
+            const isSmiling = avgEyeHeight < 0.015;
+            
+            console.log('笑顔判定:', { 
+              leftEyeHeight: leftEyeHeight.toFixed(4),
+              rightEyeHeight: rightEyeHeight.toFixed(4),
+              avgEyeHeight: avgEyeHeight.toFixed(4), 
+              threshold: 0.015,
+              isSmiling 
+            });
+            
+            // ランドマークを描画
+            canvasCtx.fillStyle = '#00FF00';
+            landmarks.forEach((landmark: any) => {
+              canvasCtx.beginPath();
+              canvasCtx.arc(
+                landmark.x * canvasRef.current!.width,
+                landmark.y * canvasRef.current!.height,
+                1,
+                0,
+                2 * Math.PI
+              );
+              canvasCtx.fill();
+            });
+            
+            // デバッグ情報と口角を強調表示
+            canvasCtx.fillStyle = isSmiling ? '#FF0000' : '#00FF00';
+            canvasCtx.font = '20px Arial';
+            canvasCtx.fillText(
+              isSmiling ? '😊 笑顔検出!' : '😐 真顔',
+              10,
+              30
+            );
+            
+            // デバッグ情報を表示
+            canvasCtx.fillStyle = '#FFFF00';
+            canvasCtx.font = '14px Arial';
+            canvasCtx.fillText(
+              `左目高さ: ${leftEyeHeight.toFixed(4)}`,
+              10,
+              60
+            );
+            canvasCtx.fillText(
+              `右目高さ: ${rightEyeHeight.toFixed(4)}`,
+              10,
+              80
+            );
+            canvasCtx.fillText(
+              `平均: ${avgEyeHeight.toFixed(4)} (閾値: 0.015)`,
+              10,
+              100
+            );
+            canvasCtx.fillText(
+              `ゲーム状態: ${gameState}`,
+              10,
+              120
+            );
+            
+            setIsSmiling(isSmiling);
+            
+            // デバッグ: 毎フレームの状態を出力（1秒に1回程度）
+            if (Math.random() < 0.1) {
+              console.log('顔検出状態:', { 
+                isSmiling, 
+                gameState: gameStateRef.current, 
+                avgEyeHeight: avgEyeHeight.toFixed(4),
+                gameEnding: gameEndingRef.current
+              });
+            }
+            
+            // 笑顔が検出されたら失敗（refの値を使用）
+            if (isSmiling && gameStateRef.current === 'playing' && !gameEndingRef.current) {
+              console.log('🚨 笑顔検出！ゲームオーバー', { 
+                avgEyeHeight,
+                threshold: 0.015,
+                gameState: gameStateRef.current
+              });
+              gameEndingRef.current = true; // 重複防止
+              handleGameEnd('failed');
+            }
+          } else {
+            // 顔が検出されない = 失敗
+            setIsSmiling(false);
+            
+            if (gameStateRef.current === 'playing' && !gameEndingRef.current) {
+              console.log('顔消失！ゲームオーバー', { gameState: gameStateRef.current });
+              gameEndingRef.current = true; // 重複防止
+              handleGameEnd('failed');
+            }
+          }
+        });
+
+        faceMeshRef.current = faceMesh;
+
+        // カメラの初期化
+        if (videoRef.current) {
+          const Camera = (window as any).Camera;
+          cameraRef.current = new Camera(videoRef.current, {
+            onFrame: async () => {
+              if (videoRef.current && faceMeshRef.current) {
+                await faceMeshRef.current.send({ image: videoRef.current });
+              }
+            },
+            width: 640,
+            height: 480
+          });
+          
+          console.log('Starting camera...');
+          await cameraRef.current.start();
+          console.log('Camera started successfully');
+        }
+        
+        return true;
+      } catch (error) {
+        console.error('Failed to initialize face mesh:', error);
+        alert(`カメラの初期化に失敗しました: ${error}`);
+        return false;
+      }
+    };
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (cameraRef.current) {
+        cameraRef.current.stop();
+      }
+      if (faceMeshRef.current) {
+        faceMeshRef.current.close();
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  // ゲーム開始
+  const handleGameStart = async () => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    console.log('Starting game with user:', user);
+    console.log('User ID:', user.user_id);
+
+    try {
+      // カメラとMediaPipeを初期化
+      const initialized = await initializeFaceMesh();
+      if (!initialized) {
+        alert('カメラの初期化に失敗しました');
+        return;
+      }
+
+      const response = await startGame(user.user_id, 180);
+      console.log('Game started:', response);
+      setGameId(response.session_id);
+      console.log('🎮 ゲーム状態を playing に変更');
+      gameEndingRef.current = false; // フラグリセット
+      setGameState('playing');
+      gameStateRef.current = 'playing';
+      setTimeRemaining(180);
+      startTimer();
+    } catch (error) {
+      console.error('Failed to start game:', error);
+      alert('ゲームの開始に失敗しました');
+    }
+  };
+
+  // タイマー開始
+  const startTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    timerRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          handleGameEnd('success');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // ゲーム終了
+  const handleGameEnd = async (result: 'success' | 'failed') => {
+    console.log('🛑 handleGameEnd呼び出し:', result);
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // カメラを停止
+    if (cameraRef.current) {
+      cameraRef.current.stop();
+      cameraRef.current = null;
+    }
+
+    setGameState(result);
+    gameStateRef.current = result;
+
+    if (gameId) {
+      try {
+        await endGame(gameId);
+        console.log('Game ended:', result);
+      } catch (error) {
+        console.error('Failed to end game:', error);
+      }
+    }
+
+    // 結果を表示してからホームに戻る
+    const message = result === 'success' 
+      ? '🎉 成功！時間切れまで耐えました！' 
+      : '😢 失敗...笑ってしまいました（または顔が消えました）';
+    alert(message);
+    
+    // ホームページに戻る
+    router.push('/home');
+  };
+
+  // リセット
+  const handleReset = () => {
+    // カメラを停止
+    if (cameraRef.current) {
+      cameraRef.current.stop();
+      cameraRef.current = null;
+    }
+    
+    setGameState('idle');
+    gameStateRef.current = 'idle';
+    gameEndingRef.current = false; // フラグリセット
+    setTimeRemaining(180);
+    setGameId(null);
+    setIsSmiling(false);
+  };
+
+  // クリーンアップ
   useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      if (accelerometerSubscription.current) {
-        accelerometerSubscription.current.remove();
-      }
     };
   }, []);
 
-  // カメラパーミッションをリクエスト
-  const handleRequestPermission = async () => {
-    const result = await requestPermission();
-    if (!result.granted) {
-      Alert.alert('カメラの許可が必要です', 'ゲームをプレイするにはカメラへのアクセスを許可してください。');
-    }
-  };
-
-  // ゲーム開始
-  const handleStartGame = async () => {
-    if (!user?.user_id) {
-      Alert.alert('エラー', 'ユーザー情報が見つかりません');
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      const response = await startGame(user.user_id, 50, 30);
-      setSessionId(response.session_id);
-      setDuration(response.duration_seconds);
-      setGameStarted(true);
-      setGameStatus('active');
-      setMessage('動かないでください！');
-      setElapsedTime(0);
-      
-      gameEndTimeRef.current = Date.now() + response.duration_seconds * 1000;
-      
-      // 加速度センサーを開始
-      Accelerometer.setUpdateInterval(100);
-      accelerometerSubscription.current = Accelerometer.addListener(accelerometerData => {
-        if (!baseAcceleration.current) {
-          baseAcceleration.current = accelerometerData;
-        } else {
-          // 加速度の変化を計算（動き検出）
-          const deltaX = Math.abs(accelerometerData.x - baseAcceleration.current.x);
-          const deltaY = Math.abs(accelerometerData.y - baseAcceleration.current.y);
-          const deltaZ = Math.abs(accelerometerData.z - baseAcceleration.current.z);
-          const totalDelta = deltaX + deltaY + deltaZ;
-
-          // 加速度変化を位置に変換（簡易的）
-          if (totalDelta > 0.1) {
-            const scaleFactor = 100;
-            currentPosition.current = {
-              x: currentPosition.current.x + deltaX * scaleFactor,
-              y: currentPosition.current.y + deltaY * scaleFactor,
-              width: 100,
-              height: 100,
-            };
-          }
-        }
-      });
-      
-      // タイマーを開始
-      timerRef.current = setInterval(() => {
-        if (gameEndTimeRef.current) {
-          const remaining = Math.max(0, Math.floor((gameEndTimeRef.current - Date.now()) / 1000));
-          const elapsed = response.duration_seconds - remaining;
-          setElapsedTime(elapsed);
-          
-          if (remaining === 0) {
-            handleGameSuccess();
-          } else {
-            // 2秒ごとに位置を送信
-            const now = Date.now();
-            if (now - lastUpdateRef.current >= 2000) {
-              lastUpdateRef.current = now;
-              updatePositionData(response.session_id);
-            }
-          }
-        }
-      }, 100);
-    } catch (error: any) {
-      console.error('ゲーム開始エラー:', error);
-      Alert.alert('エラー', error.response?.data?.error || 'ゲームを開始できませんでした');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // 位置データを更新
-  const updatePositionData = async (sid: string) => {
-    if (!gameStarted || gameStatus !== 'active') {
-      return;
-    }
-
-    try {
-      const response = await updatePosition(sid, currentPosition.current);
-      
-      if (response.has_moved) {
-        handleGameFailed();
-      } else if (response.game_status === 'success') {
-        handleGameSuccess();
-      }
-    } catch (error) {
-      console.error('位置更新エラー:', error);
-    }
-  };
-
-  // ゲーム成功
-  const handleGameSuccess = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    if (accelerometerSubscription.current) {
-      accelerometerSubscription.current.remove();
-      accelerometerSubscription.current = null;
-    }
-    setGameStatus('success');
-    setMessage('成功！動かずにいられました！');
-    setGameStarted(false);
-    
-    if (sessionId) {
-      endGame(sessionId).catch(console.error);
-    }
-  };
-
-  // ゲーム失敗
-  const handleGameFailed = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    if (accelerometerSubscription.current) {
-      accelerometerSubscription.current.remove();
-      accelerometerSubscription.current = null;
-    }
-    setGameStatus('failed');
-    setMessage('動いてしまいました！');
-    setGameStarted(false);
-    
-    if (sessionId) {
-      endGame(sessionId).catch(console.error);
-    }
-  };
-
-  // 顔検出時のハンドラー（使用しない）
-  // const handleFacesDetected = async ({ faces }: FaceDetector.FaceDetectorResult) => {};
-
-  // リセット
-  const handleReset = () => {
-    setGameStatus('idle');
-    setMessage('');
-    setSessionId(null);
-    setElapsedTime(0);
-    baseAcceleration.current = null;
-    currentPosition.current = { x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT / 2, width: 100, height: 100 };
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    if (accelerometerSubscription.current) {
-      accelerometerSubscription.current.remove();
-      accelerometerSubscription.current = null;
-    }
-  };
-
-  if (!permission) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  if (!permission.granted) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>動かないゲーム</Text>
-        <Text style={styles.text}>カメラの許可が必要です</Text>
-        <TouchableOpacity style={styles.button} onPress={handleRequestPermission}>
-          <Text style={styles.buttonText}>カメラを許可</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>動かないゲーム</Text>
-      
-      {gameStarted && (
-        <View style={styles.timerContainer}>
-          <Text style={styles.timerText}>
-            残り時間: {duration - elapsedTime}秒
-          </Text>
-        </View>
-      )}
+      {Platform.OS === 'web' ? (
+        <>
+          <div style={{ position: 'relative', width: 640, height: 480 }}>
+            <video
+              ref={videoRef}
+              style={{ position: 'absolute', width: 640, height: 480, transform: 'scaleX(-1)' }}
+              autoPlay
+              playsInline
+            />
+            <canvas
+              ref={canvasRef}
+              width={640}
+              height={480}
+              style={{ position: 'absolute', width: 640, height: 480, transform: 'scaleX(-1)' }}
+            />
+          </div>
 
-      {message && (
-        <View style={[
-          styles.messageContainer,
-          gameStatus === 'success' && styles.messageSuccess,
-          gameStatus === 'failed' && styles.messageFailed,
-        ]}>
-          <Text style={styles.messageText}>{message}</Text>
-        </View>
-      )}
+          <View style={styles.infoContainer}>
+            <Text style={styles.timerText}>残り時間: {timeRemaining}秒</Text>
+            <Text style={styles.statusText}>
+              {isSmiling ? '😊 笑顔検出!' : '😐 真顔'}
+            </Text>
+            <Text style={styles.stateText}>
+              {gameState === 'idle' && 'ゲーム開始待ち'}
+              {gameState === 'playing' && '笑わないで！'}
+              {gameState === 'success' && '🎉 成功！時間切れまで耐えました！'}
+              {gameState === 'failed' && '😢 失敗...笑ってしまいました（または顔が消えました）'}
+            </Text>
+          </View>
 
-      <View style={styles.cameraContainer}>
-        <CameraView
-          style={styles.camera}
-          facing="front"
-        >
-          {gameStarted && (
-            <View style={styles.overlay}>
-              <Text style={styles.overlayText}>動かないで！</Text>
-            </View>
-          )}
-        </CameraView>
-      </View>
-
-      <View style={styles.controls}>
-        {!gameStarted && gameStatus === 'idle' && (
-          <TouchableOpacity
-            style={[styles.button, styles.startButton]}
-            onPress={handleStartGame}
-            disabled={isProcessing}
-          >
-            {isProcessing ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>ゲーム開始</Text>
+          <View style={styles.buttonContainer}>
+            {gameState === 'idle' && (
+              <button onClick={handleGameStart} style={styles.button}>
+                ゲーム開始
+              </button>
             )}
-          </TouchableOpacity>
-        )}
-
-        {!gameStarted && (gameStatus === 'success' || gameStatus === 'failed') && (
-          <TouchableOpacity
-            style={[styles.button, styles.resetButton]}
-            onPress={handleReset}
-          >
-            <Text style={styles.buttonText}>もう一度</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.instructions}>
-        <Text style={styles.instructionText}>
-          📱 スマホを手に持って動かさないようにしてください
-        </Text>
-        <Text style={styles.instructionText}>
-          ⏱️ 30秒間動かずにいられたら成功です
-        </Text>
-        <Text style={styles.instructionText}>
-          🔧 加速度センサーで動きを検出します
-        </Text>
-      </View>
+            {(gameState === 'success' || gameState === 'failed') && (
+              <button onClick={handleReset} style={styles.button}>
+                もう一度
+              </button>
+            )}
+          </View>
+        </>
+      ) : (
+        <Text style={styles.errorText}>このゲームはWebブラウザでのみ動作します</Text>
+      )}
     </View>
   );
 }
@@ -299,113 +445,49 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
     padding: 20,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 40,
-    marginBottom: 20,
-    color: '#333',
-  },
-  text: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#666',
-  },
-  timerContainer: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+  infoContainer: {
+    marginTop: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   timerText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
+    marginBottom: 10,
   },
-  messageContainer: {
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    alignItems: 'center',
+  statusText: {
+    fontSize: 20,
+    color: '#fff',
+    marginBottom: 10,
   },
-  messageSuccess: {
-    backgroundColor: '#4CAF50',
-  },
-  messageFailed: {
-    backgroundColor: '#f44336',
-  },
-  messageText: {
+  stateText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  cameraContainer: {
-    flex: 1,
-    borderRadius: 20,
-    overflow: 'hidden',
+    color: '#4CAF50',
+    textAlign: 'center',
     marginBottom: 20,
-    backgroundColor: '#000',
   },
-  camera: {
-    flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  overlayText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10,
-  },
-  controls: {
-    marginBottom: 20,
+  buttonContainer: {
+    marginTop: 20,
   },
   button: {
-    backgroundColor: '#007AFF',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 56,
-  },
-  startButton: {
-    backgroundColor: '#4CAF50',
-  },
-  resetButton: {
     backgroundColor: '#2196F3',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  instructions: {
-    backgroundColor: '#fff',
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  instructionText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    lineHeight: 20,
+    borderRadius: 8,
+    minWidth: 150,
+    cursor: 'pointer',
+    border: 'none',
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  } as any,
+  errorText: {
+    fontSize: 18,
+    color: '#f44336',
+    textAlign: 'center',
   },
 });

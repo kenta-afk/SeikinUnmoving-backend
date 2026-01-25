@@ -1,4 +1,4 @@
-use crate::state::GameServiceState;
+use crate::{extractors::AuthenticatedUser, state::GameServiceState};
 use axum::{extract::State, http::StatusCode, Json};
 use gameservice::{GameService, StartGameRequest, StartGameResponse};
 
@@ -9,11 +9,13 @@ use gameservice::{GameService, StartGameRequest, StartGameResponse};
     request_body = StartGameRequest,
     responses(
         (status = 200, description = "Game started successfully", body = StartGameResponse),
-        (status = 400, description = "Bad request")
+        (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized")
     )
 )]
 pub async fn start_game<T>(
     State(GameServiceState(service)): State<GameServiceState<T>>,
+    AuthenticatedUser(_user_id): AuthenticatedUser,
     Json(request): Json<StartGameRequest>,
 ) -> Result<Json<StartGameResponse>, StatusCode>
 where
@@ -21,6 +23,9 @@ where
 {
     match service.start_game(request) {
         Ok(response) => Ok(Json(response)),
-        Err(_err) => Err(StatusCode::BAD_REQUEST),
+        Err(err) => {
+            tracing::error!("Failed to start game: {}", err);
+            Err(StatusCode::BAD_REQUEST)
+        }
     }
 }

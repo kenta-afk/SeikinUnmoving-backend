@@ -1,5 +1,6 @@
 pub mod health;
 pub mod user;
+pub mod game;
 
 use worker::{Router, Request, Response, Result, RouteContext};
 
@@ -18,6 +19,7 @@ async fn handle_options(_req: Request, _ctx: RouteContext<()>) -> Result<Respons
 pub fn register_routes(router: Router<'_, ()>) -> Router<'_, ()> {
     let router = health::register(router);
     let router = user::register(router);
+    let router = game::register(router);
 
     // すべてのルートでOPTIONSメソッドを処理
     router.options_async("/*catchall", handle_options)
