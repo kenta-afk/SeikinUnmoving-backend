@@ -147,7 +147,9 @@ export const signin = async (
 
 // ユーザー情報取得
 export const getUser = async (): Promise<GetUserResponse> => {
+  console.log('API call: getUser');
   const response = await api.get<GetUserResponse>('/api/user/me');
+  console.log('getUser response:', response.data);
   return response.data;
 };
 
@@ -214,6 +216,19 @@ export interface GameStatusResponse {
   duration_seconds: number;
 }
 
+export interface Video {
+  id: string;
+  youtube_url: string;
+  title: string | null;
+  duration_seconds: number | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface GetRandomVideoResponse {
+  video: Video;
+}
+
 // ゲーム開始
 export const startGame = async (
   userId: string,
@@ -249,8 +264,26 @@ export const getGameStatus = async (sessionId: string): Promise<GameStatusRespon
 };
 
 // ゲーム終了
-export const endGame = async (sessionId: string): Promise<void> => {
-  await api.post(`/api/game/end/${sessionId}`);
+export const endGame = async (sessionId: string, seikinSimilarity?: number): Promise<void> => {
+  console.log('API endGame called with:', { sessionId, seikinSimilarity });
+  const requestData = {
+    seikin_similarity: seikinSimilarity,
+  };
+  console.log('Sending to /api/game/end/', sessionId, 'with data:', requestData);
+  await api.post(`/api/game/end/${sessionId}`, requestData);
+  console.log('endGame API call completed');
+};
+
+// ランダムな動画を取得
+export const getRandomVideo = async (): Promise<Video> => {
+  const response = await api.get<GetRandomVideoResponse>('/api/videos/random');
+  return response.data.video;
+};
+
+// 全動画を取得
+export const getAllVideos = async (): Promise<Video[]> => {
+  const response = await api.get<{ videos: Video[] }>('/api/videos');
+  return response.data.videos;
 };
 
 export default api;

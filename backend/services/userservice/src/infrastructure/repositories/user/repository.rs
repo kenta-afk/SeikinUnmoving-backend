@@ -33,6 +33,9 @@ impl UserRepository for UserRepositoryImpl {
     async fn get_by_id(&self, _id: UserId) -> Result<Option<User>, DbError> {
         Err(DbError::Generic("Not implemented for WASM".to_string()))
     }
+    async fn update_seikin_similarity(&self, _id: UserId, _similarity: f64) -> Result<(), DbError> {
+        Err(DbError::Generic("Not implemented for WASM".to_string()))
+    }
 }
 
 // ローカル開発環境用の実装（SQLXを使用）
@@ -138,5 +141,25 @@ impl UserRepository for UserRepositoryImpl {
                     .with_timezone(&chrono::Utc),
             )
         }))
+    }
+
+    async fn update_seikin_similarity(&self, id: UserId, similarity: f64) -> Result<(), DbError> {
+        let id_str = id.to_string();
+        let updated_at = chrono::Utc::now().to_rfc3339();
+        
+        sqlx::query!(
+            r#"
+            UPDATE users
+            SET seikin_similarity = ?, updated_at = ?
+            WHERE id = ?
+            "#,
+            similarity,
+            updated_at,
+            id_str
+        )
+        .execute(&self.pool)
+        .await?;
+        
+        Ok(())
     }
 }

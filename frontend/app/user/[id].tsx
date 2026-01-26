@@ -8,16 +8,34 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 
 export default function UserScreen() {
   const { user, loading, signOut, refreshUser } = useAuth();
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const hasRefreshedRef = React.useRef(false);
 
+  // 初回マウント時のみユーザー情報を更新
   useEffect(() => {
-    refreshUser();
+    if (!hasRefreshedRef.current) {
+      console.log('Initial user data refresh');
+      refreshUser();
+      hasRefreshedRef.current = true;
+    }
   }, []);
+
+  // デバッグ用: ユーザー情報を出力
+  useEffect(() => {
+    if (user) {
+      console.log('Current user data:', {
+        user_id: user.user_id,
+        name: user.name,
+        email: user.email,
+        seikin_similarity: user.seikin_similarity,
+      });
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut();

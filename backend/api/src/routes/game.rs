@@ -2,9 +2,17 @@ use gameservice::{
     GameService, GameServiceImpl, StartGameRequest, StartGameResponse, UpdatePositionRequest,
     UpdatePositionResponse,
 };
+use userservice::{UserService};
 use worker::*;
+use serde::Deserialize;
 
 use super::user::extractor::jwt::extract_user_id_from_jwt;
+use super::user::common::create_user_service;
+
+#[derive(Deserialize)]
+struct EndGameRequest {
+    seikin_similarity: Option<f64>,
+}
 
 /// ゲーム開始
 async fn start_game(mut req: Request, _ctx: RouteContext<()>) -> Result<Response> {
@@ -54,15 +62,47 @@ async fn update_position(mut req: Request, _ctx: RouteContext<()>) -> Result<Res
 }
 
 /// ゲーム終了
-async fn end_game(_req: Request, ctx: RouteContext<()>) -> Result<Response> {
+async fn end_game(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
+    // JWTからユーザーIDを取得
+    let user_id = match extract_user_id_from_jwt(&req) {
+        Ok(id) => id,
+        Err(_) => {
+            return Response::error("Unauthorized", 401);
+        }
+    };
+
     let session_id = ctx.param("session_id").unwrap().to_string();
+    
+    // リクエストボディからセイキン類似度を取得
+    let body: EndGameRequest = match req.json().await {
+        Ok(b) => b,
+        Err(_) => EndGameRequest { seikin_similarity: None },
+    };
 
     // GameServiceを作成
     let game_service = GameServiceImpl::new();
 
     // ゲームを終了
     match game_service.end_game(&session_id) {
-        Ok(_) => Response::ok("Game ended"),
+        Ok(_) => {
+            // セイキン類似度が提供されている場合は更新
+            if let Some(similarity) = body.seikin_similarity {
+                // UserServiceを作成
+                let user_service = match create_user_service(&ctx) {
+                    Ok(service) => service,
+                    Err(e) => {
+                        console_log!("Failed to create user service: {}", e);
+                        return Response::ok("Game ended");
+                    }
+                };
+                
+                // セイキン類似度を更新
+                if let Err(e) = user_service.update_seikin_similarity(user_id, similarity).await {
+                    console_log!("Failed to update seikin_similarity for user {}: {:?}", user_id, e);
+                }
+            }
+            Response::ok("Game ended")
+        },
         Err(e) => Response::error(format!("Failed to end game: {}", e), 500),
     }
 }

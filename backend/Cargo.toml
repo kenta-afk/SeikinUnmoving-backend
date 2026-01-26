@@ -1,3 +1,9 @@
 [workspace]
-members = ["services/userservice", "presentation"]
+members = [
+    "services/userservice",
+    "services/videoservice",
+    "services/gameservice",
+    "services/rankingservice",
+    "presentation"
+]
 resolver = "2"
