@@ -44,5 +44,5 @@ pub async fn get_user(req: Request, ctx: RouteContext<()>) -> Result<Response> {
 }
 
 pub fn register(router: Router<'_, ()>) -> Router<'_, ()> {
-    router.get_async("/user/me", get_user)
+    router.get_async("/api/user/me", get_user)
 }
