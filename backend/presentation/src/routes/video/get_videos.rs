@@ -1,5 +1,5 @@
 use crate::state::VideoServiceState;
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use serde::Serialize;
 use utoipa::ToSchema;
 use videoservice::{GetVideosCommand, Video, VideoService};
@@ -27,9 +27,7 @@ where
     let command = GetVideosCommand::new();
 
     match service.get_videos(command).await {
-        Ok(dto) => Ok(Json(GetVideosResponse {
-            videos: dto.videos,
-        })),
+        Ok(dto) => Ok(Json(GetVideosResponse { videos: dto.videos })),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }

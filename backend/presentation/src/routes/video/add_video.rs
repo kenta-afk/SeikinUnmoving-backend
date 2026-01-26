@@ -1,5 +1,5 @@
 use crate::state::VideoServiceState;
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use videoservice::{AddVideoCommand, VideoService};
@@ -35,11 +35,8 @@ pub async fn add_video<T>(
 where
     T: VideoService,
 {
-    let command = AddVideoCommand::new(
-        payload.youtube_url,
-        payload.title,
-        payload.duration_seconds,
-    );
+    let command =
+        AddVideoCommand::new(payload.youtube_url, payload.title, payload.duration_seconds);
 
     match service.add_video(command).await {
         Ok(dto) => Ok(Json(AddVideoResponse {

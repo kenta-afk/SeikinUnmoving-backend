@@ -16,7 +16,9 @@ use crate::{
         },
     },
     domain::{
-        models::{client::Client, jwt::JwtClaims, refresh_token::RefreshClaims, user::User, id::UserId},
+        models::{
+            client::Client, id::UserId, jwt::JwtClaims, refresh_token::RefreshClaims, user::User,
+        },
         repositories::{
             client::client_repository::ClientRepository, user::user_repository::UserRepository,
         },
@@ -31,7 +33,11 @@ pub trait UserService: Send + Sync + 'static {
     async fn get_user(&self, command: GetUserCommand) -> Result<GetUserDto, ServiceError>;
     async fn refresh_token(&self, command: RefreshCommand) -> Result<RefreshDto, ServiceError>;
     async fn logout(&self, command: LogoutCommand) -> Result<LogoutDto, ServiceError>;
-    async fn update_seikin_similarity(&self, user_id: UserId, similarity: f64) -> Result<(), ServiceError>;
+    async fn update_seikin_similarity(
+        &self,
+        user_id: UserId,
+        similarity: f64,
+    ) -> Result<(), ServiceError>;
 }
 
 pub struct UserServiceImpl<UR, CR, IP, SS>
@@ -235,8 +241,14 @@ where
         Ok(LogoutDto)
     }
 
-    async fn update_seikin_similarity(&self, user_id: UserId, similarity: f64) -> Result<(), ServiceError> {
-        self.user_repo.update_seikin_similarity(user_id, similarity).await?;
+    async fn update_seikin_similarity(
+        &self,
+        user_id: UserId,
+        similarity: f64,
+    ) -> Result<(), ServiceError> {
+        self.user_repo
+            .update_seikin_similarity(user_id, similarity)
+            .await?;
         Ok(())
     }
 }

@@ -1,5 +1,5 @@
 use crate::state::VideoServiceState;
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use serde::Serialize;
 use utoipa::ToSchema;
 use videoservice::{GetRandomVideoCommand, Video, VideoService};

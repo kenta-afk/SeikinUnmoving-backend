@@ -1,4 +1,6 @@
-use super::{create_video::CreateVideo, get_random_active_video::GetRandomActiveVideo, get_videos::GetVideos};
+use super::{
+    create_video::CreateVideo, get_random_active_video::GetRandomActiveVideo, get_videos::GetVideos,
+};
 use crate::domain::models::error::DbError;
 use async_trait::async_trait;
 

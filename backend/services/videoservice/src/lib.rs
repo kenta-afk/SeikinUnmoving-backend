@@ -12,9 +12,7 @@ pub use application::{
         add_video::AddVideoCommand, get_random_video::GetRandomVideoCommand,
         get_videos::GetVideosCommand,
     },
-    dto::{
-        add_video::AddVideoDto, get_random_video::GetRandomVideoDto, get_videos::GetVideosDto,
-    },
+    dto::{add_video::AddVideoDto, get_random_video::GetRandomVideoDto, get_videos::GetVideosDto},
     ports::uuid_service::UuidService,
     videoservice::{VideoService, VideoServiceImpl},
 };

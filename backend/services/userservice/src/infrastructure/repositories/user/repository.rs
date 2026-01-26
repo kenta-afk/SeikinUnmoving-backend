@@ -146,7 +146,7 @@ impl UserRepository for UserRepositoryImpl {
     async fn update_seikin_similarity(&self, id: UserId, similarity: f64) -> Result<(), DbError> {
         let id_str = id.to_string();
         let updated_at = chrono::Utc::now().to_rfc3339();
-        
+
         sqlx::query!(
             r#"
             UPDATE users
@@ -159,7 +159,7 @@ impl UserRepository for UserRepositoryImpl {
         )
         .execute(&self.pool)
         .await?;
-        
+
         Ok(())
     }
 }

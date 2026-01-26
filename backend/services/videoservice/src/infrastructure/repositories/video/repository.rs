@@ -1,7 +1,9 @@
-use crate::domain::models::{error::DbError, id::VideoId, video::Video};
-use crate::domain::repositories::video::{
-    create_video::CreateVideo, get_random_active_video::GetRandomActiveVideo,
-    get_videos::GetVideos, video_repository::VideoRepository,
+use crate::domain::{
+    models::{error::DbError, id::VideoId, video::Video},
+    repositories::video::{
+        create_video::CreateVideo, get_random_active_video::GetRandomActiveVideo,
+        get_videos::GetVideos, video_repository::VideoRepository,
+    },
 };
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};

@@ -1,12 +1,15 @@
-use crate::{extractors::AuthenticatedUser, state::{GameServiceState, UserServiceState}};
+use crate::{
+    extractors::AuthenticatedUser,
+    state::{GameServiceState, UserServiceState},
+};
 use axum::{
+    Json,
     extract::{Path, State},
     http::StatusCode,
-    Json,
 };
 use gameservice::GameService;
-use userservice::{UserService};
 use serde::Deserialize;
+use userservice::UserService;
 use utoipa::ToSchema;
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -39,25 +42,39 @@ where
     T: GameService,
     U: UserService,
 {
-    println!("end_game called: user_id={}, session_id={}, seikin_similarity={:?}", 
-             user_id, session_id, request.seikin_similarity);
-    
+    println!(
+        "end_game called: user_id={}, session_id={}, seikin_similarity={:?}",
+        user_id, session_id, request.seikin_similarity
+    );
+
     // ゲームセッションを終了
     match game_service.end_game(&session_id) {
         Ok(_) => {
             // セイキン類似度が提供されている場合は更新（成功時のみ送信される）
             if let Some(similarity) = request.seikin_similarity {
-                println!("Updating seikin_similarity for user {} to {}", user_id, similarity);
-                if let Err(e) = user_service.update_seikin_similarity(user_id, similarity).await {
-                    eprintln!("Failed to update seikin_similarity for user {}: {:?}", user_id, e);
+                println!(
+                    "Updating seikin_similarity for user {} to {}",
+                    user_id, similarity
+                );
+                if let Err(e) = user_service
+                    .update_seikin_similarity(user_id, similarity)
+                    .await
+                {
+                    eprintln!(
+                        "Failed to update seikin_similarity for user {}: {:?}",
+                        user_id, e
+                    );
                 } else {
-                    println!("Successfully updated seikin_similarity for user {}", user_id);
+                    println!(
+                        "Successfully updated seikin_similarity for user {}",
+                        user_id
+                    );
                 }
             } else {
                 println!("No seikin_similarity provided in request");
             }
             Ok(StatusCode::OK)
-        },
+        }
         Err(_err) => Err(StatusCode::NOT_FOUND),
     }
 }
