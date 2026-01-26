@@ -45,5 +45,5 @@ pub async fn signin(mut req: Request, ctx: RouteContext<()>) -> Result<Response>
 }
 
 pub fn register(router: Router<'_, ()>) -> Router<'_, ()> {
-    router.post_async("/user/signin", signin)
+    router.post_async("/api/user/signin", signin)
 }

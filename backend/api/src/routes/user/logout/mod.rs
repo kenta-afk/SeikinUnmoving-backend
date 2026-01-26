@@ -33,5 +33,5 @@ pub async fn logout(req: Request, ctx: RouteContext<()>) -> Result<Response> {
 }
 
 pub fn register(router: Router<'_, ()>) -> Router<'_, ()> {
-    router.post_async("/user/logout", logout)
+    router.post_async("/api/user/logout", logout)
 }
