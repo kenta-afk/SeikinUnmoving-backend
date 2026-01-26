@@ -34,11 +34,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let game_service = gameservice::build_service();
 
+    let video_service = videoservice::build_service(&database_url)
+        .await
+        .map_err(|e| format!("Failed to build video service: {}", e))?;
+
     let jwt_config = state::JwtConfig::new(&secret_key);
 
     let app_state = state::AppState {
         user_service,
         game_service,
+        video_service,
         jwt_config,
     };
 

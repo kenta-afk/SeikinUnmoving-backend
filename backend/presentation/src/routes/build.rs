@@ -21,6 +21,9 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::routes::game::update_position,
         crate::routes::game::get_game_status,
         crate::routes::game::end_game,
+        crate::routes::video::add_video,
+        crate::routes::video::get_videos,
+        crate::routes::video::get_random_video,
     ),
     components(
         schemas(
@@ -31,20 +34,26 @@ use utoipa_swagger_ui::SwaggerUi;
             crate::routes::user::GetUserResponse,
             crate::routes::user::RefreshResponse,
             crate::routes::user::LogoutResponse,
+            crate::routes::video::AddVideoRequest,
+            crate::routes::video::AddVideoResponse,
+            crate::routes::video::GetVideosResponse,
+            crate::routes::video::GetRandomVideoResponse,
         )
     ),
     tags(
         (name = "user", description = "User management endpoints"),
         (name = "game", description = "Game endpoints"),
+        (name = "video", description = "Video endpoints"),
         (name = "health", description = "Health check endpoints")
     )
 )]
 struct ApiDoc;
 
-pub fn build_router<US, GS>(app_state: AppState<US, GS>) -> Router
+pub fn build_router<US, GS, VS>(app_state: AppState<US, GS, VS>) -> Router
 where
-    US: userservice::UserService + Clone + Send + Sync,
-    GS: gameservice::GameService + Clone + Send + Sync,
+    US: userservice::UserService + Clone + Send + Sync + 'static,
+    GS: gameservice::GameService + Clone + Send + Sync + 'static,
+    VS: videoservice::VideoService + Clone + Send + Sync + 'static,
 {
     let health_route = Router::new().route("/health", get(crate::routes::check::health::health));
 
@@ -72,6 +81,15 @@ where
             post(crate::routes::game::end_game),
         );
 
+    // ビデオルート
+    let video_route = Router::new()
+        .route("/api/videos", post(crate::routes::video::add_video))
+        .route("/api/videos", get(crate::routes::video::get_videos))
+        .route(
+            "/api/videos/random",
+            get(crate::routes::video::get_random_video),
+        );
+
     let cors = CorsLayer::new()
         .allow_origin(
             "http://localhost:8081"
@@ -87,6 +105,7 @@ where
         .merge(health_route)
         .merge(user_route)
         .merge(game_route)
+        .merge(video_route)
         .layer(cors)
         .with_state(app_state)
 }

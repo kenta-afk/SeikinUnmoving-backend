@@ -93,4 +93,27 @@ impl UserRepository for UserRepositoryD1 {
             None => Ok(None),
         }
     }
+
+    async fn update_seikin_similarity(&self, id: UserId, similarity: f64) -> Result<(), DbError> {
+        let updated_at = chrono::Utc::now().to_rfc3339();
+        
+        let query = self
+            .db
+            .prepare(
+                "UPDATE users SET seikin_similarity = ?1, updated_at = ?2 WHERE id = ?3"
+            )
+            .bind(&[
+                similarity.into(),
+                updated_at.into(),
+                id.to_string().into(),
+            ])
+            .map_err(|e| DbError::Generic(e.to_string()))?;
+
+        query
+            .run()
+            .await
+            .map_err(|e| DbError::Generic(e.to_string()))?;
+
+        Ok(())
+    }
 }

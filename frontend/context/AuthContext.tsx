@@ -96,7 +96,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshUser = async (): Promise<void> => {
     try {
+      console.log('Fetching user data...');
       const userData = await api.getUser();
+      console.log('Received user data:', userData);
       setUser(userData);
     } catch (error) {
       console.error('ユーザー情報更新エラー:', error);
