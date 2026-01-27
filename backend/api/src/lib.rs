@@ -4,6 +4,7 @@ mod repositories;
 pub use repositories::{
     client_repository_d1::ClientRepositoryD1,
     user_repository_d1::UserRepositoryD1,
+    video_repository_d1::VideoRepositoryD1,
 };
 
 use worker::*;
