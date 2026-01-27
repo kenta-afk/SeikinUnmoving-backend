@@ -12,9 +12,6 @@ jobs:
   deploy-backend:
     name: Deploy Backend to Cloudflare Workers
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend/api
     env:
       SQLX_OFFLINE: true
 
