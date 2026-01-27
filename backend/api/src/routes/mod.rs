@@ -6,9 +6,18 @@ pub mod video;
 use worker::{Router, Request, Response, Result, RouteContext};
 
 // OPTIONSリクエストを処理（CORSプリフライト）
-async fn handle_options(_req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+async fn handle_options(req: Request, _ctx: RouteContext<()>) -> Result<Response> {
     let headers = worker::Headers::new();
-    headers.set("Access-Control-Allow-Origin", "https://c1356b39.seikin-frontend.pages.dev")?;
+    
+    // リクエストのOriginヘッダーを取得
+    let origin = req.headers().get("Origin")?.unwrap_or_default();
+    let allowed_origin = if origin.ends_with(".seikin-frontend.pages.dev") || origin.ends_with(".seikinunmoving.pages.dev") {
+        origin
+    } else {
+        "*".to_string()
+    };
+    
+    headers.set("Access-Control-Allow-Origin", &allowed_origin)?;
     headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")?;
     headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")?;
     headers.set("Access-Control-Allow-Credentials", "true")?;
