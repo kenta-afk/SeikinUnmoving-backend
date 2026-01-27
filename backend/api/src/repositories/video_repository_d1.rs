@@ -1,5 +1,5 @@
 use videoservice::domain::{
-    models::{error::DbError, video::Video},
+    models::{error::DbError, id::VideoId, video::Video},
     repositories::video::{
         create_video::CreateVideo, get_random_active_video::GetRandomActiveVideo,
         get_videos::GetVideos, video_repository::VideoRepository,
@@ -7,6 +7,19 @@ use videoservice::domain::{
 };
 use worker::d1::D1Database;
 use std::sync::Arc;
+use serde::Deserialize;
+use chrono::{DateTime, Utc};
+
+// D1から取得したビデオデータの中間構造体
+#[derive(Debug, Deserialize)]
+struct VideoRow {
+    id: String,
+    youtube_url: String,
+    title: Option<String>,
+    duration_seconds: Option<i64>,
+    is_active: i32, // SQLiteは整数で返す
+    created_at: String,
+}
 
 #[derive(Clone)]
 pub struct VideoRepositoryD1 {
@@ -61,9 +74,23 @@ impl VideoRepository for VideoRepositoryD1 {
             .await
             .map_err(|e| DbError::Generic(e.to_string()))?;
 
-        let videos: Vec<Video> = result
-            .results::<Video>()
+        let rows: Vec<VideoRow> = result
+            .results::<VideoRow>()
             .map_err(|e| DbError::Generic(format!("Failed to deserialize videos: {}", e)))?;
+
+        let videos: Vec<Video> = rows
+            .into_iter()
+            .map(|row| {
+                Video::new(
+                    VideoId::new(row.id),
+                    row.youtube_url,
+                    row.title,
+                    row.duration_seconds,
+                    row.is_active != 0,
+                    row.created_at.parse::<DateTime<Utc>>().unwrap_or_else(|_| Utc::now()),
+                )
+            })
+            .collect();
 
         Ok(GetVideos { videos })
     }
@@ -75,14 +102,20 @@ impl VideoRepository for VideoRepositoryD1 {
                 "SELECT id, youtube_url, title, duration_seconds, is_active, created_at 
                  FROM videos WHERE is_active = 1 ORDER BY RANDOM() LIMIT 1"
             )
-            .first::<serde_json::Value>(None)
+            .first::<VideoRow>(None)
             .await
             .map_err(|e| DbError::Generic(e.to_string()))?;
 
         match result {
             Some(row) => {
-                let video: Video = serde_json::from_value(row)
-                    .map_err(|e| DbError::Generic(format!("Failed to deserialize video: {}", e)))?;
+                let video = Video::new(
+                    VideoId::new(row.id),
+                    row.youtube_url,
+                    row.title,
+                    row.duration_seconds,
+                    row.is_active != 0,
+                    row.created_at.parse::<DateTime<Utc>>().unwrap_or_else(|_| Utc::now()),
+                );
                 Ok(GetRandomActiveVideo::new(video))
             }
             None => Err(DbError::Generic("No active videos available".to_string())),
