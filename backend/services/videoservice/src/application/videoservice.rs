@@ -63,8 +63,8 @@ where
 #[async_trait]
 impl<R, U> VideoService for VideoServiceImpl<R, U>
 where
-    R: VideoRepository + 'static,
-    U: UuidService + 'static,
+    R: VideoRepository + Send + Sync + 'static,
+    U: UuidService + Send + Sync + 'static,
 {
     async fn add_video(&self, command: AddVideoCommand) -> Result<AddVideoDto, ServiceError> {
         let video_id = VideoId::new(self.uuid_service.generate());
