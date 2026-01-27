@@ -98,7 +98,7 @@ export const signup = async (
   password: string
 ): Promise<SignUpResponse & { userId?: string }> => {
   const requestData: SignUpRequest = { name, email, password };
-  const response = await api.post<SignUpResponse>('/user/signup', requestData);
+  const response = await api.post<SignUpResponse>('/api/user/signup', requestData);
 
   const { jwt, refresh_token } = response.data;
   await AsyncStorage.setItem('jwt', jwt);
@@ -114,7 +114,7 @@ export const signin = async (
   password: string
 ): Promise<SignInResponse & { userId?: string }> => {
   const requestData: SignInRequest = { email, password };
-  const response = await api.post<SignInResponse>('/user/signin', requestData);
+  const response = await api.post<SignInResponse>('/api/user/signin', requestData);
 
   const { jwt, refresh_token } = response.data;
   await AsyncStorage.setItem('jwt', jwt);
@@ -126,7 +126,7 @@ export const signin = async (
 
 // ユーザー情報取得
 export const getUser = async (): Promise<GetUserResponse> => {
-  const response = await api.post<GetUserResponse>('/api/user');
+  const response = await api.get<GetUserResponse>('/api/user/me');
   return response.data;
 };
 
@@ -138,7 +138,7 @@ export const logout = async (): Promise<void> => {
 
 // トークンリフレッシュ
 export const refreshToken = async (): Promise<RefreshResponse> => {
-  const response = await api.post<RefreshResponse>('/refresh');
+  const response = await api.post<RefreshResponse>('/api/user/refresh');
   const { jwt, refresh_token } = response.data;
   await AsyncStorage.setItem('jwt', jwt);
   await AsyncStorage.setItem('refresh_token', refresh_token);
