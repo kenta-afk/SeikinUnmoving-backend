@@ -4,7 +4,7 @@ use crate::infrastructure::{
 use thiserror::Error;
 
 mod application;
-mod domain;
+pub mod domain;
 pub mod infrastructure;
 
 pub use application::{
