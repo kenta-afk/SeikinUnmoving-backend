@@ -17,6 +17,7 @@ pub struct EndGameRequest {
     pub seikin_similarity: Option<f64>,
 }
 
+//endpoint to end a game session
 #[utoipa::path(
     post,
     path = "/game/end/{session_id}",
