@@ -11,6 +11,8 @@ use crate::domain::{
 
 // ローカル開発環境用（WASM以外）
 #[cfg(not(target_arch = "wasm32"))]
+use crate::domain::models::id::ClientId;
+#[cfg(not(target_arch = "wasm32"))]
 use sqlx::SqlitePool;
 #[cfg(not(target_arch = "wasm32"))]
 use std::str::FromStr;
