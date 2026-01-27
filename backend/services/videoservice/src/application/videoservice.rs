@@ -13,9 +13,9 @@ use crate::{
         repositories::video::{create_video::CreateVideo, video_repository::VideoRepository},
     },
 };
-use async_trait::async_trait;
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 pub trait VideoService: Send + Sync + 'static {
     async fn add_video(&self, command: AddVideoCommand) -> Result<AddVideoDto, ServiceError>;
     async fn get_videos(&self, command: GetVideosCommand) -> Result<GetVideosDto, ServiceError>;
@@ -60,7 +60,8 @@ where
     }
 }
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 impl<R, U> VideoService for VideoServiceImpl<R, U>
 where
     R: VideoRepository + Send + Sync + 'static,

@@ -2,7 +2,7 @@ use crate::domain::{
     models::{
         client::Client,
         error::DbError,
-        id::{ClientId, UserId},
+        id::UserId,
     },
     repositories::client::{
         client_repository::ClientRepository, create_client::CreateClient, save_client::SaveClient,

@@ -1,42 +1,60 @@
 use crate::domain::{
-    models::{error::DbError, id::VideoId, video::Video},
+    models::error::DbError,
     repositories::video::{
         create_video::CreateVideo, get_random_active_video::GetRandomActiveVideo,
         get_videos::GetVideos, video_repository::VideoRepository,
     },
 };
-use async_trait::async_trait;
+
+// WASM環境用の実装
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Default)]
+pub struct VideoRepositoryImpl {}
+
+#[cfg(target_arch = "wasm32")]
+impl VideoRepositoryImpl {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+#[async_trait::async_trait(?Send)]
+impl VideoRepository for VideoRepositoryImpl {
+    async fn create(&self, _video: CreateVideo) -> Result<(), DbError> {
+        Err(DbError::Generic("Not implemented for WASM".to_string()))
+    }
+
+    async fn get_all(&self) -> Result<GetVideos, DbError> {
+        Err(DbError::Generic("Not implemented for WASM".to_string()))
+    }
+
+    async fn get_random_active(&self) -> Result<GetRandomActiveVideo, DbError> {
+        Err(DbError::Generic("Not implemented for WASM".to_string()))
+    }
+}
+
+// ローカル開発環境用の実装（SQLXを使用）
+#[cfg(not(target_arch = "wasm32"))]
+use crate::domain::models::{id::VideoId, video::Video};
+#[cfg(not(target_arch = "wasm32"))]
 use chrono::{DateTime, Utc};
 
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Clone)]
 pub struct VideoRepositoryImpl {
-    #[cfg(not(target_arch = "wasm32"))]
     pool: sqlx::SqlitePool,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl VideoRepositoryImpl {
-    #[cfg(not(target_arch = "wasm32"))]
     pub fn new(pool: sqlx::SqlitePool) -> Self {
         Self { pool }
     }
 }
 
-impl Clone for VideoRepositoryImpl {
-    fn clone(&self) -> Self {
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            Self {
-                pool: self.pool.clone(),
-            }
-        }
-        #[cfg(target_arch = "wasm32")]
-        {
-            Self {}
-        }
-    }
-}
-
 #[cfg(not(target_arch = "wasm32"))]
-#[async_trait]
+#[async_trait::async_trait]
 impl VideoRepository for VideoRepositoryImpl {
     async fn create(&self, video: CreateVideo) -> Result<(), DbError> {
         let id = video.id.as_str();
