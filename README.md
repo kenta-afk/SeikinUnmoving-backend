@@ -12,8 +12,8 @@
 │   ├── presentation/# メインAPIサーバー (Axum)
 │   ├── services/    # ドメインサービス
 │   │   ├── userservice/    # ユーザー管理
-│   │   ├── gameservice/    # ゲームロジック
-│   │   └── rankingservice/ # ランキング
+│   │   ├── gameservice/    # ゲーム進行・判定
+│   │   └── videoservice/   # 動画管理
 │   └── db/          # データベースマイグレーション
 └── frontend/        # React Native (Expo) フロントエンド
 ```
@@ -52,6 +52,7 @@ docker compose logs -f apiroute
 docker compose down
 ```
 
+
 ### Services
 - **apiroute** (API Server): http://localhost:8080
 - **valkey** (Redis互換): localhost:6379
@@ -60,6 +61,16 @@ docker compose down
 - SQLite を使用
 - データはDockerボリュームに永続化 (`sqlite_data`)
 - マイグレーションファイル: `backend/db/migrations/`
+
+### gameservice
+- ゲームセッションの開始・進行・終了API
+- 顔の動き（FacePosition）をもとに「動いたら負け」判定
+- ゲーム結果の保存・取得
+
+### videoservice
+- ゲームで使うYouTube動画の管理API
+- 動画の追加・一覧取得・ランダム取得
+- 動画情報（URL, タイトル, 長さ, 有効/無効）を管理
 
 ### API Documentation
 サーバー起動後、以下のURLでAPI仕様を確認できます:
