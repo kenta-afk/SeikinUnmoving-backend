@@ -6,7 +6,6 @@ edition = "2024"
 [dependencies]
 userservice = { path = "../services/userservice" }
 gameservice = { path = "../services/gameservice" }
-rankingservice = { path = "../services/rankingservice" }
 videoservice = { path = "../services/videoservice", features = ["utoipa"] }
 worker = "0.4.0"
 serde = { version = "1.0", features = ["derive"] }
