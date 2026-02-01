@@ -1,5 +1,5 @@
 use worker::*;
-use videoservice::{VideoService, VideoServiceImpl, GetVideosCommand, GetRandomVideoCommand};
+use videoservice::{VideoService, VideoServiceImpl};
 use crate::VideoRepositoryD1;
 
 /// D1データベースからビデオサービスを構築

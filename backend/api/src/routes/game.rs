@@ -1,6 +1,5 @@
 use gameservice::{
-    GameService, GameServiceImpl, StartGameRequest, StartGameResponse, UpdatePositionRequest,
-    UpdatePositionResponse,
+    GameService, StartGameRequest, UpdatePositionRequest,
 };
 use userservice::{UserService};
 use worker::*;
@@ -27,13 +26,14 @@ async fn start_game(mut req: Request, _ctx: RouteContext<()>) -> Result<Response
     let body: StartGameRequest = req.json().await?;
 
     // GameServiceを作成
-    let game_service = GameServiceImpl::new();
+    let db = _ctx.env.d1("DB")?;
+    let game_service = gameservice::build_service_with_d1(db);
 
     // ゲームを開始
     let mut request = body;
     request.user_id = user_id.to_string();
     
-    let response = match game_service.start_game(request) {
+    let response = match game_service.start_game(request).await {
         Ok(res) => res,
         Err(e) => {
             return Response::error(format!("Failed to start game: {}", e), 500);
@@ -44,11 +44,12 @@ async fn start_game(mut req: Request, _ctx: RouteContext<()>) -> Result<Response
 }
 
 /// 位置更新
-async fn update_position(mut req: Request, _ctx: RouteContext<()>) -> Result<Response> {
+async fn update_position(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
     let body: UpdatePositionRequest = req.json().await?;
 
     // GameServiceを作成
-    let game_service = GameServiceImpl::new();
+    let db = ctx.env.d1("DB")?;
+    let game_service = gameservice::build_service_with_d1(db);
 
     // 位置を更新
     let response = match game_service.update_position(body) {
@@ -80,10 +81,11 @@ async fn end_game(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
     };
 
     // GameServiceを作成
-    let game_service = GameServiceImpl::new();
+    let db = ctx.env.d1("DB")?;
+    let game_service = gameservice::build_service_with_d1(db);
 
     // ゲームを終了
-    match game_service.end_game(&session_id) {
+    match game_service.end_game(&session_id).await {
         Ok(_) => {
             // セイキン類似度が提供されている場合は更新
             if let Some(similarity) = body.seikin_similarity {
