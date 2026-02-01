@@ -32,7 +32,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .map_err(|e| format!("Failed to build service: {}", e))?;
 
-    let game_service = gameservice::build_service();
+    let game_service = gameservice::build_service(&database_url)
+        .map_err(|e| format!("Failed to build game service: {}", e))?;
 
     let video_service = videoservice::build_service(&database_url)
         .await

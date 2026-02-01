@@ -21,7 +21,7 @@ pub async fn start_game<T>(
 where
     T: GameService,
 {
-    match service.start_game(request) {
+    match service.start_game(request).await {
         Ok(response) => Ok(Json(response)),
         Err(err) => {
             tracing::error!("Failed to start game: {}", err);

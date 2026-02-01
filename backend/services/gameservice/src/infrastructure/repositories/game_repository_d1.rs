@@ -46,6 +46,20 @@ impl GameRepository for GameRepositoryD1 {
         Ok(())
     }
 
+    async fn update_game_result(&self, game_id: &str, is_clear: bool) -> Result<(), String> {
+        let is_clear_value = if is_clear { 1 } else { 0 };
+
+        self.db
+            .prepare("UPDATE games SET is_clear = ?1 WHERE id = ?2")
+            .bind(&[is_clear_value.into(), game_id.into()])
+            .map_err(|e| format!("Failed to bind parameters: {:?}", e))?
+            .run()
+            .await
+            .map_err(|e| format!("Failed to update game result: {:?}", e))?;
+
+        Ok(())
+    }
+
     async fn get_user_game_results(&self, user_id: &str) -> Result<Vec<GameResult>, String> {
         let results = self
             .db

@@ -7,43 +7,59 @@ use super::{
         UpdatePositionResponse,
     },
 };
-use crate::domain::models::game_session::GameStatus;
+use crate::domain::{
+    game_repository::{GameRepository, GameResult},
+    models::game_session::GameStatus,
+};
 
 /// ゲームサービストレイト
+#[cfg(not(target_arch = "wasm32"))]
+#[async_trait::async_trait]
 pub trait GameService: Clone + Send + Sync + 'static {
-    fn start_game(&self, request: StartGameRequest) -> Result<StartGameResponse, String>;
+    async fn start_game(&self, request: StartGameRequest) -> Result<StartGameResponse, String>;
     fn update_position(
         &self,
         request: UpdatePositionRequest,
     ) -> Result<UpdatePositionResponse, String>;
     fn get_game_status(&self, session_id: &str) -> Result<GameStatusResponse, String>;
-    fn end_game(&self, session_id: &str) -> Result<(), String>;
+    async fn end_game(&self, session_id: &str) -> Result<(), String>;
+    fn cleanup_expired_sessions(&self) -> Result<usize, String>;
+}
+
+#[cfg(target_arch = "wasm32")]
+#[async_trait::async_trait(?Send)]
+pub trait GameService: Clone + Send + Sync + 'static {
+    async fn start_game(&self, request: StartGameRequest) -> Result<StartGameResponse, String>;
+    fn update_position(
+        &self,
+        request: UpdatePositionRequest,
+    ) -> Result<UpdatePositionResponse, String>;
+    fn get_game_status(&self, session_id: &str) -> Result<GameStatusResponse, String>;
+    async fn end_game(&self, session_id: &str) -> Result<(), String>;
     fn cleanup_expired_sessions(&self) -> Result<usize, String>;
 }
 
 /// ゲームサービス実装
 #[derive(Clone)]
-pub struct GameServiceImpl {
+pub struct GameServiceImpl<R: GameRepository> {
     session_manager: GameSessionManager,
+    repository: R,
 }
 
-impl Default for GameServiceImpl {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl GameServiceImpl {
-    pub fn new() -> Self {
+impl<R: GameRepository> GameServiceImpl<R> {
+    pub fn new(repository: R) -> Self {
         Self {
             session_manager: GameSessionManager::new(),
+            repository,
         }
     }
 }
 
-impl GameService for GameServiceImpl {
+#[cfg(not(target_arch = "wasm32"))]
+#[async_trait::async_trait]
+impl<R: GameRepository> GameService for GameServiceImpl<R> {
     /// ゲームを開始
-    fn start_game(&self, request: StartGameRequest) -> Result<StartGameResponse, String> {
+    async fn start_game(&self, request: StartGameRequest) -> Result<StartGameResponse, String> {
         // 既にアクティブなセッションがある場合は自動終了
         if let Some(session) = self
             .session_manager
@@ -54,7 +70,7 @@ impl GameService for GameServiceImpl {
         }
 
         let session = self.session_manager.start_game(
-            request.user_id,
+            request.user_id.clone(),
             request.movement_threshold,
             request.duration_seconds,
         )?;
@@ -120,7 +136,16 @@ impl GameService for GameServiceImpl {
     }
 
     /// ゲームセッションを終了
-    fn end_game(&self, session_id: &str) -> Result<(), String> {
+    async fn end_game(&self, session_id: &str) -> Result<(), String> {
+        // セッションを取得して状態を確認
+        let session = self.session_manager.get_session(session_id)?;
+        let is_clear = session.status == GameStatus::Success;
+        
+        // DBにゲーム結果を登録
+        let game_result = GameResult::new(session.id.clone(), session.user_id.clone(), is_clear);
+        self.repository.save_game_result(game_result).await?;
+        
+        // メモリから削除
         self.session_manager.remove_session(session_id)
     }
 

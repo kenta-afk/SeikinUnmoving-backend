@@ -22,8 +22,25 @@ pub use domain::{
 #[cfg(target_arch = "wasm32")]
 pub use infrastructure::repositories::GameRepositoryD1;
 
-pub type ConcreteGameService = GameServiceImpl;
+#[cfg(not(target_arch = "wasm32"))]
+pub use infrastructure::repositories::GameRepositorySqlx;
 
-pub fn build_service() -> ConcreteGameService {
-    GameServiceImpl::new()
+#[cfg(not(target_arch = "wasm32"))]
+pub type ConcreteGameService = GameServiceImpl<GameRepositorySqlx>;
+
+#[cfg(target_arch = "wasm32")]
+pub type ConcreteGameService = GameServiceImpl<GameRepositoryD1>;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn build_service(database_url: &str) -> Result<ConcreteGameService, String> {
+    let pool = sqlx::SqlitePool::connect_lazy(database_url)
+        .map_err(|e| format!("Failed to connect to database: {:?}", e))?;
+    let repository = GameRepositorySqlx::new(pool);
+    Ok(GameServiceImpl::new(repository))
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn build_service_with_d1(db: worker::d1::D1Database) -> ConcreteGameService {
+    let repository = GameRepositoryD1::new(db);
+    GameServiceImpl::new(repository)
 }

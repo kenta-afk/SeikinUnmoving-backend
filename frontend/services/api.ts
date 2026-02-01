@@ -232,7 +232,7 @@ export interface GetRandomVideoResponse {
 // ゲーム開始
 export const startGame = async (
   userId: string,
-  durationSeconds: number = 180
+  durationSeconds: number = 160
 ): Promise<StartGameResponse> => {
   console.log('startGame called with:', { userId, durationSeconds });
   const requestData: StartGameRequest = {

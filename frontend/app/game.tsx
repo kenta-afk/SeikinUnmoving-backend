@@ -8,7 +8,7 @@ export default function GameScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'success' | 'failed'>('idle');
-  const [timeRemaining, setTimeRemaining] = useState(180);
+  const [timeRemaining, setTimeRemaining] = useState(160);
   const [gameId, setGameId] = useState<string | null>(null);
   const [isSmiling, setIsSmiling] = useState(false);
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
@@ -452,7 +452,7 @@ export default function GameScreen() {
         return;
       }
 
-      const response = await startGame(user.user_id, 180);
+      const response = await startGame(user.user_id, 160);
       console.log('Game started:', response);
       console.log('Setting gameId to:', response.session_id);
       setGameId(response.session_id);
@@ -461,7 +461,7 @@ export default function GameScreen() {
       gameEndingRef.current = false; // フラグリセット
       setGameState('playing');
       gameStateRef.current = 'playing';
-      setTimeRemaining(180);
+      setTimeRemaining(160);
       startTimer();
     } catch (error) {
       console.error('Failed to start game:', error);
