@@ -49,7 +49,7 @@ where
     );
 
     // ゲームセッションを終了
-    match game_service.end_game(&session_id) {
+    match game_service.end_game(&session_id).await {
         Ok(_) => {
             // セイキン類似度が提供されている場合は更新（成功時のみ送信される）
             if let Some(similarity) = request.seikin_similarity {

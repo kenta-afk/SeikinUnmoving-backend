@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE games\n            SET is_clear = ?\n            WHERE id = ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "aa3267a62d950a66eb5961627876c8f8392a418bb8a7044f33fe21c1ad9ae63c"
+}
