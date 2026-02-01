@@ -12,10 +12,12 @@ uuid = { version = "1.11", features = ["v4"] }
 async-trait = "0.1"
 serde_json = "1.0"
 tracing = "0.1"
-sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-native-tls", "macros"], optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls", "macros"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 worker = { version = "0.7.4", features = ["d1"] }
 
 [features]
-default = ["sqlx"]
+default = []
