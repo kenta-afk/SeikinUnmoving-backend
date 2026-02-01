@@ -140,11 +140,11 @@ impl<R: GameRepository> GameService for GameServiceImpl<R> {
         // セッションを取得して状態を確認
         let session = self.session_manager.get_session(session_id)?;
         let is_clear = session.status == GameStatus::Success;
-        
+
         // DBにゲーム結果を登録
         let game_result = GameResult::new(session.id.clone(), session.user_id.clone(), is_clear);
         self.repository.save_game_result(game_result).await?;
-        
+
         // メモリから削除
         self.session_manager.remove_session(session_id)
     }
