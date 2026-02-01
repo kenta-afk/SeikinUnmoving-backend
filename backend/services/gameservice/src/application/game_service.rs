@@ -155,3 +155,104 @@ impl<R: GameRepository> GameService for GameServiceImpl<R> {
         self.session_manager.cleanup_expired_sessions(3600)
     }
 }
+
+#[cfg(target_arch = "wasm32")]
+#[async_trait::async_trait(?Send)]
+impl<R: GameRepository> GameService for GameServiceImpl<R> {
+    /// ゲームを開始
+    async fn start_game(&self, request: StartGameRequest) -> Result<StartGameResponse, String> {
+        // 既にアクティブなセッションがある場合は自動終了
+        if let Some(session) = self
+            .session_manager
+            .get_user_active_session(&request.user_id)?
+        {
+            // 既存セッションを削除
+            let _ = self.session_manager.remove_session(&session.id);
+        }
+
+        let session = self.session_manager.start_game(
+            request.user_id.clone(),
+            request.movement_threshold,
+            request.duration_seconds,
+        )?;
+
+        Ok(StartGameResponse {
+            session_id: session.id,
+            started_at: session.started_at.to_rfc3339(),
+            duration_seconds: session.duration_seconds,
+        })
+    }
+
+    /// 顔位置を更新
+    fn update_position(
+        &self,
+        request: UpdatePositionRequest,
+    ) -> Result<UpdatePositionResponse, String> {
+        let (has_moved, status) = self
+            .session_manager
+            .update_position(&request.session_id, request.position)?;
+
+        let (game_status, message) = match status {
+            GameStatus::Active => ("active".to_string(), None),
+            GameStatus::Failed => (
+                "failed".to_string(),
+                Some("You moved! Game over.".to_string()),
+            ),
+            GameStatus::Success => (
+                "success".to_string(),
+                Some("Congratulations! You stayed still!".to_string()),
+            ),
+        };
+
+        Ok(UpdatePositionResponse {
+            has_moved,
+            game_status,
+            message,
+        })
+    }
+
+    /// ゲームの状態を取得
+    fn get_game_status(&self, session_id: &str) -> Result<GameStatusResponse, String> {
+        let session = self.session_manager.get_session(session_id)?;
+
+        let elapsed = Utc::now()
+            .signed_duration_since(session.started_at)
+            .num_seconds();
+
+        let status_str = match session.status {
+            GameStatus::Active => "active",
+            GameStatus::Failed => "failed",
+            GameStatus::Success => "success",
+        };
+
+        Ok(GameStatusResponse {
+            session_id: session.id,
+            user_id: session.user_id,
+            status: status_str.to_string(),
+            started_at: session.started_at.to_rfc3339(),
+            ended_at: session.ended_at.map(|dt| dt.to_rfc3339()),
+            elapsed_seconds: elapsed,
+            duration_seconds: session.duration_seconds,
+        })
+    }
+
+    /// ゲームセッションを終了
+    async fn end_game(&self, session_id: &str) -> Result<(), String> {
+        // セッションを取得して状態を確認
+        let session = self.session_manager.get_session(session_id)?;
+        let is_clear = session.status == GameStatus::Success;
+
+        // DBにゲーム結果を登録
+        let game_result = GameResult::new(session.id.clone(), session.user_id.clone(), is_clear);
+        self.repository.save_game_result(game_result).await?;
+
+        // メモリから削除
+        self.session_manager.remove_session(session_id)
+    }
+
+    /// 期限切れセッションをクリーンアップ
+    fn cleanup_expired_sessions(&self) -> Result<usize, String> {
+        // 1時間以上経過したセッションを削除
+        self.session_manager.cleanup_expired_sessions(3600)
+    }
+}
