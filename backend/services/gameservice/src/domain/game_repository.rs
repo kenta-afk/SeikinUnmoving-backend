@@ -39,7 +39,7 @@ pub trait GameRepository: Send + Sync + Clone + 'static {
 
 #[cfg(target_arch = "wasm32")]
 #[async_trait::async_trait(?Send)]
-pub trait GameRepository {
+pub trait GameRepository: Send + Sync + Clone + 'static {
     /// ゲーム結果を保存
     async fn save_game_result(&self, result: GameResult) -> Result<(), String>;
 
