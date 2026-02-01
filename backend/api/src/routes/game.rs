@@ -77,8 +77,14 @@ async fn end_game(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
     // リクエストボディからセイキン類似度を取得
     let body: EndGameRequest = match req.json().await {
         Ok(b) => b,
-        Err(_) => EndGameRequest { seikin_similarity: None },
+        Err(e) => {
+            console_log!("Failed to parse request body: {:?}", e);
+            EndGameRequest { seikin_similarity: None }
+        },
     };
+
+    console_log!("End game request - session_id: {}, user_id: {}, seikin_similarity: {:?}", 
+        session_id, user_id, body.seikin_similarity);
 
     // GameServiceを作成
     let db = ctx.env.d1("DB")?;
@@ -87,25 +93,41 @@ async fn end_game(mut req: Request, ctx: RouteContext<()>) -> Result<Response> {
     // ゲームを終了
     match game_service.end_game(&session_id).await {
         Ok(_) => {
+            console_log!("Game ended successfully");
+            
             // セイキン類似度が提供されている場合は更新
             if let Some(similarity) = body.seikin_similarity {
+                console_log!("Updating seikin_similarity to {} for user {}", similarity, user_id);
+                
                 // UserServiceを作成
                 let user_service = match create_user_service(&ctx) {
                     Ok(service) => service,
                     Err(e) => {
                         console_log!("Failed to create user service: {}", e);
-                        return Response::ok("Game ended");
+                        return Response::error("Failed to create user service", 500);
                     }
                 };
                 
                 // セイキン類似度を更新
-                if let Err(e) = user_service.update_seikin_similarity(user_id, similarity).await {
-                    console_log!("Failed to update seikin_similarity for user {}: {:?}", user_id, e);
+                match user_service.update_seikin_similarity(user_id, similarity).await {
+                    Ok(_) => {
+                        console_log!("Successfully updated seikin_similarity for user {}", user_id);
+                    }
+                    Err(e) => {
+                        console_log!("Failed to update seikin_similarity for user {}: {:?}", user_id, e);
+                        return Response::error(format!("Failed to update seikin_similarity: {:?}", e), 500);
+                    }
                 }
+            } else {
+                console_log!("No seikin_similarity provided in request");
             }
+            
             Response::ok("Game ended")
         },
-        Err(e) => Response::error(format!("Failed to end game: {}", e), 500),
+        Err(e) => {
+            console_log!("Failed to end game: {}", e);
+            Response::error(format!("Failed to end game: {}", e), 500)
+        },
     }
 }
 
